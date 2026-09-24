@@ -1,0 +1,110 @@
+// @vitest-environment jsdom
+import moment from "moment";
+import { beforeAll, describe, expect, it } from "vitest";
+import { TFile } from "obsidian";
+import { makeFormat } from "../src/parse/format";
+import { renderAccounts } from "../src/render/accounts";
+import type { RenderCtx } from "../src/render/common";
+import { renderDashboard } from "../src/render/dashboard";
+import { renderMap } from "../src/render/map";
+import { DEFAULT_SETTINGS } from "../src/settings";
+import { planSetup } from "../src/setup";
+import { installDomHelpers } from "./dom";
+
+const fakeApp = (files: Record<string, string>) => {
+  const store = { ...files };
+  const tfiles = () => Object.keys(store).map((p) => new TFile(p));
+  const opened: string[] = [];
+  const app = {
+    vault: {
+      getMarkdownFiles: tfiles,
+      cachedRead: async (f: TFile) => store[f.path],
+      getAbstractFileByPath: (p: string) => (store[p] != null ? new TFile(p) : null),
+      process: async (f: TFile, fn: (d: string) => string) => { store[f.path] = fn(store[f.path]); return store[f.path]; },
+    },
+    metadataCache: {
+      getFileCache: (f: TFile) => {
+        const m = /^---\n([\s\S]*?)\n---/.exec(store[f.path] ?? "");
+        return m && /status: sample/.test(m[1]) ? { frontmatter: { money: { status: "sample" } } } : null;
+      },
+    },
+    workspace: { openLinkText: async (p: string) => { opened.push(p); } },
+  };
+  return { app, store, opened };
+};
+
+const ctxFor = (app: unknown, redraw: () => Promise<void> = async () => {}): RenderCtx => ({
+  app: app as never,
+  settings: DEFAULT_SETTINGS,
+  fmt: makeFormat({ currency: "₹", style: "indian" }),
+  cats: { income: "Income", transfer: "Transfer", investments: "Investments" },
+  state: {},
+  refresh: redraw,
+  onCleanup: () => {},
+  watch: () => {},
+});
+
+const sample = () => Object.fromEntries(planSetup("Money", new Set(), moment(), true).map((f) => [f.path, f.content]));
+
+beforeAll(() => { installDomHelpers(); (globalThis as any).requestAnimationFrame = () => 0; (globalThis as any).cancelAnimationFrame = () => {}; });
+
+describe("renderDashboard", () => {
+  it("draws the current month from the sample notes", async () => {
+    const { app } = fakeApp(sample());
+    const el = document.createElement("div");
+    await renderDashboard(ctxFor(app), el);
+    expect(el.querySelector(".wd-money-title")!.textContent).toBe(moment().format("MMMM YYYY"));
+    expect(el.querySelectorAll(".wd-card").length).toBe(7);
+    expect(el.textContent).toContain("row needs a category");
+    expect(el.querySelectorAll("table.wd-money-table tbody tr").length).toBeGreaterThan(5);
+  });
+
+  it("writes a category into the inbox from the picker", async () => {
+    const { app, store } = fakeApp(sample());
+    const el = document.createElement("div");
+    let redraws = 0;
+    await renderDashboard(ctxFor(app, async () => { redraws++; }), el);
+    const pick = el.querySelector("select.wd-cat-select.is-empty") as HTMLSelectElement;
+    pick.value = "Groceries";
+    await (pick.onchange as () => Promise<void>)();
+    expect(redraws).toBe(1);
+    expect(store["Money/Expenses.md"]).toMatch(/\| City Cafe \| Groceries \|/);
+  });
+
+  it("switches to the previous month and marks it as sample data", async () => {
+    const { app } = fakeApp(sample());
+    const el = document.createElement("div");
+    const ctx = ctxFor(app);
+    await renderDashboard(ctx, el);
+    (el.querySelector('button[aria-label="Previous month"]') as HTMLButtonElement).click();
+    expect(el.textContent).toContain("is sample data");
+    expect(ctx.state.selKey).toBe(moment().subtract(1, "month").format("YYYY-MM"));
+  });
+
+  it("shows the empty state in an empty vault", async () => {
+    const { app } = fakeApp({ "a.md": "hello" });
+    const el = document.createElement("div");
+    await renderDashboard(ctxFor(app), el);
+    expect(el.textContent).toContain("No money data found yet");
+  });
+});
+
+describe("renderAccounts", () => {
+  it("draws one card per configured account", async () => {
+    const { app } = fakeApp(sample());
+    const el = document.createElement("div");
+    await renderAccounts(ctxFor(app), el);
+    const labels = [...el.querySelectorAll(".wd-grid")[0].querySelectorAll(".wd-label")].map((n) => n.textContent);
+    expect(labels.sort()).toEqual(["Everyday Bank", "Shopping Card", "Travel Card"]);
+  });
+});
+
+describe("renderMap", () => {
+  it("draws the map shell and the places table", async () => {
+    const { app } = fakeApp(sample());
+    const el = document.createElement("div");
+    await renderMap(ctxFor(app), el);
+    expect(el.querySelector(".wd-hmap")).not.toBeNull();
+    expect(el.querySelector(".wd-hmap-legend-sum")!.textContent).toMatch(/places?/);
+  });
+});

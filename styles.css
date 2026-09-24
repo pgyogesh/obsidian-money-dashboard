@@ -1,0 +1,1430 @@
+/* ============================================================================
+ * Money Dashboard plugin styles
+ *
+ * Every page is drawn inside an element with the classes
+ * `money-dashboard md-block` plus `money-accounts` or `money-map`.
+ *
+ * Colours come from the --md-* tokens below. Each one uses the matching
+ * --nt-* token when a theme defines it, and otherwise a core Obsidian
+ * variable, so the pages work under any theme.
+ * ==========================================================================*/
+
+body .money-dashboard {
+  --md-accent: var(--nt-accent, var(--interactive-accent));
+  --md-accent-bg: var(--nt-accent-bg, color-mix(in srgb, var(--interactive-accent) 14%, transparent));
+  --md-text-primary: var(--nt-text-primary, var(--text-normal));
+  --md-text-secondary: var(--nt-text-secondary, var(--text-muted));
+  --md-text-tertiary: var(--nt-text-tertiary, var(--text-faint));
+  --md-border: var(--nt-border, var(--background-modifier-border));
+  --md-border-strong: var(--nt-border-strong, var(--background-modifier-border-hover));
+  --md-hover: var(--nt-hover, var(--background-modifier-hover));
+  --md-bg: var(--nt-bg, var(--background-primary));
+  --md-bg-sidebar: var(--nt-bg-sidebar, var(--background-secondary));
+  --md-bg-elevated: var(--nt-bg-elevated, var(--background-primary));
+  --md-dash-1: var(--nt-dash-1, #2383e2);
+  --md-dash-2: var(--nt-dash-2, #9a6dd7);
+  --md-dash-3: var(--nt-dash-3, #2d9964);
+  --md-dash-4: var(--nt-dash-4, #d9730d);
+  --md-dash-5: var(--nt-dash-5, #4aa3b8);
+  --md-dash-6: var(--nt-dash-6, #d75f96);
+  --md-dash-7: var(--nt-dash-7, #7a7a85);
+}
+
+/* --- Stat cards: flat Notion surfaces, a small colour dot instead of a bar --- */
+body .money-dashboard .wd-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 10px;
+  margin: 1em 0 1.6em;
+}
+/* Dashboard accent slots. The colour classes point at --nt-dash-* tokens, which
+   each palette can redefine (see REGION 16) - that is what makes the dashboard
+   follow the active palette. The fallbacks are the default Notion set, so a
+   palette that defines nothing still looks right. */
+body .money-dashboard .wd-blue   { --card-color: var(--md-dash-1, #2383e2); }
+body .money-dashboard .wd-purple { --card-color: var(--md-dash-2, #9a6dd7); }
+body .money-dashboard .wd-green  { --card-color: var(--md-dash-3, #2d9964); }
+body .money-dashboard .wd-amber  { --card-color: var(--md-dash-4, #d9730d); }
+body .money-dashboard .wd-cyan   { --card-color: var(--md-dash-5, #4aa3b8); }
+body .money-dashboard .wd-pink   { --card-color: var(--md-dash-6, #d75f96); }
+body .money-dashboard .wd-slate  { --card-color: var(--md-dash-7, #7a7a85); }
+
+/* At a glance: tinted surface + coloured top edge, one hue per metric */
+body .money-dashboard .wd-card {
+  padding: 13px 15px;
+  border: 1px solid var(--md-border-strong);
+  border-left: 1px solid var(--md-border-strong);
+  border-top: 2px solid var(--card-color, var(--md-accent));
+  border-radius: 7px;
+  background-color: color-mix(in srgb, var(--card-color, var(--md-accent)) 7%, var(--md-bg-sidebar));
+  box-shadow: 0 1px 2px rgba(15, 15, 15, 0.04);
+  transition: background-color 120ms ease, border-color 120ms ease, box-shadow 120ms ease;
+}
+body .money-dashboard .wd-card:hover {
+  background-color: color-mix(in srgb, var(--card-color, var(--md-accent)) 14%, var(--md-bg-sidebar));
+  border-color: var(--md-border-strong);
+  border-top-color: var(--card-color, var(--md-accent));
+  box-shadow: 0 2px 6px rgba(15, 15, 15, 0.07);
+}
+/* Cards that navigate somewhere: pointer affordance + keyboard focus ring */
+body .money-dashboard .wd-card.is-clickable { cursor: pointer; }
+body .money-dashboard .wd-card.is-clickable:focus-visible {
+  outline: none;
+  border-color: var(--md-accent);
+  box-shadow: 0 0 0 2px var(--md-accent-bg), 0 2px 6px rgba(15, 15, 15, 0.07);
+}
+body .money-dashboard .wd-card.is-clickable:active { background-color: var(--md-hover); }
+body .money-dashboard .wd-label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--md-text-secondary);
+  font-size: 13px;
+  font-weight: 500;
+  letter-spacing: 0;
+  text-transform: none;
+}
+body .money-dashboard .wd-label::before {
+  content: "";
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background-color: var(--card-color, var(--md-accent));
+  flex-shrink: 0;
+}
+body .money-dashboard .wd-value {
+  margin: 0.15em 0 0.1em;
+  color: var(--md-text-primary);
+  font-size: 28px;
+  font-weight: 600;
+  line-height: 1.2;
+  letter-spacing: -0.01em;
+}
+body .money-dashboard .wd-detail { color: var(--md-text-tertiary); font-size: 12px; }
+
+body .money-dashboard {
+  --wd-secondary: color-mix(in srgb, var(--md-text-primary) 82%, transparent);
+}
+body .money-dashboard .wd-label,
+body .money-dashboard .wd-detail {
+  color: var(--wd-secondary);
+}
+
+/* ============================================================================
+   REGION 25 - MONEY DASHBOARD (cssclass: dashboard money-dashboard)
+   ----------------------------------------------------------------------------
+   Styling for "Money Dashboard.md". It reuses REGION 19's stat cards
+   (.wd-card / .wd-grid / .wd-label / .wd-value / .wd-detail) and adds only what
+   money needs: a month switcher, a labelled 12-month column chart, horizontal
+   breakdown bars, and a filterable transaction table.
+
+   Category and card colours come from the --nt-dash-* palette tokens (REGION
+   16) through --bar-color, so the whole dashboard follows the active palette.
+   Selectors are prefixed with `body` for the same reason as REGION 19: CSS
+   snippets load after themes.
+   ============================================================================ */
+
+/* --- Header: title left, month switcher right ------------------------------- */
+body .money-dashboard .wd-money-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin: 0.2em 0 1.4em;
+  padding-left: 12px;
+  border-left: 2px solid var(--md-accent);
+}
+body .money-dashboard .wd-money-heading { display: flex; flex-direction: column; gap: 1px; }
+body .money-dashboard .wd-money-eyebrow {
+  color: var(--md-text-secondary);
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0.03em;
+}
+body .money-dashboard .wd-money-title {
+  color: var(--md-text-primary);
+  font-size: 22px;
+  font-weight: 600;
+  line-height: 1.25;
+  letter-spacing: -0.012em;
+}
+
+body .money-dashboard .wd-money-nav { display: flex; align-items: center; gap: 6px; }
+body .money-dashboard .wd-money-step {
+  width: 26px;
+  height: 26px;
+  padding: 0;
+  border: 1px solid var(--md-border-strong);
+  border-radius: 5px;
+  background-color: var(--md-bg-sidebar);
+  box-shadow: none;
+  color: var(--md-text-secondary);
+  font-size: 13px;
+  line-height: 1;
+  cursor: pointer;
+}
+body .money-dashboard .wd-money-step:hover:not(:disabled) {
+  background-color: var(--md-hover);
+  color: var(--md-text-primary);
+}
+body .money-dashboard .wd-money-step:disabled { opacity: 0.35; cursor: default; }
+body .money-dashboard .wd-money-pick {
+  height: 26px;
+  padding: 0 6px;
+  border: 1px solid var(--md-border-strong);
+  border-radius: 5px;
+  background-color: var(--md-bg-sidebar);
+  color: var(--md-text-primary);
+  font-size: 12px;
+}
+
+/* Status chip: sample data is called out, final months stay quiet. */
+body .money-dashboard .wd-money-badge {
+  padding: 2px 8px;
+  border-radius: 4px;
+  background-color: var(--md-hover);
+  color: var(--md-text-secondary);
+  font-size: 11px;
+  font-weight: 500;
+}
+body .money-dashboard .wd-money-badge.is-sample {
+  background-color: color-mix(in srgb, var(--md-dash-4, #d9730d) 16%, transparent);
+  color: var(--md-dash-4, #d9730d);
+}
+/* The current month reads live from the inbox. Green says "this is moving",
+   as against the amber of sample data or the blue of a draft. */
+body .money-dashboard .wd-money-badge.is-live {
+  background-color: color-mix(in srgb, var(--md-dash-3, #2d9964) 16%, transparent);
+  color: var(--md-dash-3, #2d9964);
+}
+body .money-dashboard .wd-money-badge.is-unarchived {
+  background-color: color-mix(in srgb, var(--md-dash-4, #d9730d) 16%, transparent);
+  color: var(--md-dash-4, #d9730d);
+}
+body .money-dashboard .wd-money-badge.is-draft {
+  background-color: color-mix(in srgb, var(--md-dash-1, #2383e2) 16%, transparent);
+  color: var(--md-dash-1, #2383e2);
+}
+
+/* Sample / no-data notice ---------------------------------------------------- */
+body .money-dashboard .wd-money-warn {
+  padding: 11px 14px;
+  margin: 0 0 1.6em;
+  border: 1px solid var(--md-border);
+  border-left: 3px solid var(--md-dash-4, #d9730d);
+  border-radius: 7px;
+  color: var(--md-text-secondary);
+  font-size: 13px;
+  line-height: 1.55;
+}
+body .money-dashboard .wd-money-empty {
+  padding: 22px 16px;
+  margin: 0 0 1.6em;
+  border: 1px dashed var(--md-border-strong);
+  border-radius: 7px;
+  color: var(--md-text-secondary);
+  font-size: 13px;
+  text-align: center;
+}
+
+/* Month-over-month delta on the stat cards ----------------------------------- */
+body .money-dashboard .wd-money-delta { font-weight: 500; }
+body .money-dashboard .wd-money-delta.is-up { color: var(--md-dash-6, #d75f96); }
+body .money-dashboard .wd-money-delta.is-down { color: var(--md-dash-3, #2d9964); }
+body .money-dashboard .wd-money-delta.is-flat { color: var(--md-text-tertiary); }
+
+/* --- Shared panel surface (matches .wd-spark) ------------------------------- */
+body .money-dashboard .wd-money-panel {
+  padding: 12px 15px;
+  margin: 0 0 1.6em;
+  border: 1px solid var(--md-border-strong);
+  border-radius: 7px;
+  background-color: var(--md-bg-sidebar);
+}
+/* The SMS inbox is a to-do, not a metric, so it carries an accent edge that
+   the measurement panels below it deliberately do not. */
+body .money-dashboard .wd-money-panel.is-inbox {
+  border-left: 3px solid var(--md-dash-1, #2383e2);
+}
+body .money-dashboard .wd-money-panel.is-inbox .wd-money-panel-title {
+  color: var(--md-dash-1, #2383e2);
+}
+body .money-dashboard .wd-money-panel-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 11px;
+}
+body .money-dashboard .wd-money-panel-title {
+  color: var(--md-text-primary);
+  font-size: 13px;
+  font-weight: 600;
+}
+body .money-dashboard .wd-money-panel-sub {
+  color: var(--md-text-secondary);
+  font-size: 11px;
+}
+/* Cross-link between the two money pages. Sits in a panel head or a nav row,
+   sized like the muted sub-label so it reads as navigation rather than data. */
+body .money-dashboard a.wd-money-link,
+body .money-dashboard a.wd-money-link:hover {
+  color: var(--md-accent);
+  font-size: 11px;
+  font-weight: 500;
+  white-space: nowrap;
+  text-decoration: none;
+  cursor: pointer;
+}
+body .money-dashboard a.wd-money-link:hover { text-decoration: underline; }
+/* A head holding title, count and link needs the link pinned right rather than
+   evenly spread, or the count drifts into the middle of the panel. */
+body .money-dashboard .wd-money-panel-head > a.wd-money-link { margin-left: auto; }
+/* Two panels side by side; collapses to one column on a narrow pane. */
+body .money-dashboard .wd-money-cols {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 10px;
+}
+body .money-dashboard .wd-money-cols > .wd-money-panel { margin-bottom: 1.6em; }
+
+/* --- 12-month column chart -------------------------------------------------- */
+body .money-dashboard .wd-money-chart {
+  display: flex;
+  align-items: flex-end;
+  gap: 5px;
+  height: 108px;
+}
+body .money-dashboard .wd-money-col {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
+  height: 100%;
+  gap: 5px;
+  cursor: pointer;
+}
+body .money-dashboard .wd-money-colbar {
+  width: 100%;
+  min-height: 2px;
+  border-radius: 3px 3px 0 0;
+  background-color: color-mix(in srgb, var(--md-accent) 42%, transparent);
+  transition: background-color 120ms ease;
+}
+body .money-dashboard .wd-money-col:hover .wd-money-colbar,
+body .money-dashboard .wd-money-col.is-selected .wd-money-colbar {
+  background-color: var(--md-accent);
+}
+body .money-dashboard .wd-money-colbar.is-empty {
+  background-color: var(--md-hover);
+  min-height: 2px;
+}
+body .money-dashboard .wd-money-xlabel {
+  color: var(--md-text-tertiary);
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.01em;
+  white-space: nowrap;
+}
+body .money-dashboard .wd-money-col.is-selected .wd-money-xlabel {
+  color: var(--md-text-primary);
+  font-weight: 600;
+}
+
+/* --- Horizontal breakdown bars (categories, cards, merchants) --------------- */
+body .money-dashboard .wd-money-bars { display: flex; flex-direction: column; gap: 7px; }
+body .money-dashboard .wd-money-row {
+  display: grid;
+  grid-template-columns: minmax(88px, 30%) 1fr auto;
+  align-items: center;
+  gap: 10px;
+}
+body .money-dashboard .wd-money-name {
+  color: var(--md-text-primary);
+  font-size: 12px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+body .money-dashboard .wd-money-track {
+  height: 8px;
+  border-radius: 4px;
+  background-color: var(--md-hover);
+  overflow: hidden;
+}
+body .money-dashboard .wd-money-fill {
+  height: 100%;
+  min-width: 2px;
+  border-radius: 4px;
+  background-color: var(--bar-color, var(--md-accent));
+}
+body .money-dashboard .wd-money-amt {
+  color: var(--md-text-primary);
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+body .money-dashboard .wd-money-pct {
+  color: var(--md-text-tertiary);
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+  margin-left: 5px;
+}
+
+/* --- Transaction table ------------------------------------------------------ */
+body .money-dashboard .wd-money-filters {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 7px;
+  margin-bottom: 10px;
+}
+body .money-dashboard .wd-money-search {
+  flex: 1 1 180px;
+  min-width: 140px;
+  height: 28px;
+  padding: 0 9px;
+  border: 1px solid var(--md-border-strong);
+  border-radius: 5px;
+  background-color: var(--md-bg);
+  color: var(--md-text-primary);
+  font-size: 12px;
+}
+body .money-dashboard .wd-money-search:focus {
+  border-color: var(--md-accent);
+  box-shadow: 0 0 0 2px var(--md-accent-bg);
+  outline: none;
+}
+body .money-dashboard .wd-money-filter {
+  height: 28px;
+  padding: 0 6px;
+  border: 1px solid var(--md-border-strong);
+  border-radius: 5px;
+  background-color: var(--md-bg);
+  color: var(--md-text-primary);
+  font-size: 12px;
+}
+body .money-dashboard .wd-money-tablewrap { overflow-x: auto; }
+body .money-dashboard table.wd-money-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+}
+body .money-dashboard table.wd-money-table th {
+  padding: 5px 8px;
+  border-bottom: 1px solid var(--md-border-strong);
+  color: var(--md-text-secondary);
+  font-size: 11px;
+  font-weight: 500;
+  text-align: left;
+  white-space: nowrap;
+  cursor: pointer;
+  user-select: none;
+}
+body .money-dashboard table.wd-money-table th:hover { color: var(--md-text-primary); }
+body .money-dashboard table.wd-money-table th.is-num,
+body .money-dashboard table.wd-money-table td.is-num {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+body .money-dashboard table.wd-money-table td {
+  padding: 5px 8px;
+  border-bottom: 1px solid var(--md-border);
+  color: var(--md-text-primary);
+  vertical-align: top;
+}
+body .money-dashboard table.wd-money-table tr:hover td { background-color: var(--md-hover); }
+body .money-dashboard table.wd-money-table td.is-credit { color: var(--md-dash-3, #2d9964); }
+/* Category pill in the table - tinted from the row's own --bar-color. */
+body .money-dashboard .wd-money-tag {
+  display: inline-block;
+  padding: 1px 7px;
+  border-radius: 3px;
+  /* 15% read as grey at this size whatever the hue. 22% plus a hairline border
+     gives the pill a readable edge without becoming a background wash. */
+  background-color: color-mix(in srgb, var(--bar-color, var(--md-accent)) 22%, transparent);
+  border: 1px solid color-mix(in srgb, var(--bar-color, var(--md-accent)) 34%, transparent);
+  color: var(--bar-color, var(--md-accent));
+  font-size: 11px;
+  font-weight: 500;
+  white-space: nowrap;
+}
+/* --- Category palette (Expenses inbox) --------------------------------------
+   Click-to-copy chips. Colours come from the same hash as the dashboard bars,
+   so a category is the same colour wherever it appears. */
+body .money-dashboard .wd-cat-wrap {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 2px 0 4px;
+}
+body .money-dashboard .wd-cat-chip {
+  padding: 3px 10px;
+  border: 1px solid transparent;
+  border-radius: 4px;
+  background-color: color-mix(in srgb, var(--bar-color, var(--md-accent)) 14%, transparent);
+  box-shadow: none;
+  color: var(--bar-color, var(--md-accent));
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 1.4;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: background-color 110ms ease, border-color 110ms ease;
+}
+body .money-dashboard .wd-cat-chip:hover {
+  background-color: color-mix(in srgb, var(--bar-color, var(--md-accent)) 26%, transparent);
+  border-color: color-mix(in srgb, var(--bar-color, var(--md-accent)) 45%, transparent);
+}
+body .money-dashboard .wd-cat-chip:active { transform: translateY(1px); }
+/* Confirmation reuses the green dash slot rather than the chip's own hue, so
+   "copied" never reads as just another category colour. */
+body .money-dashboard .wd-cat-chip.is-copied {
+  background-color: color-mix(in srgb, var(--md-dash-3, #2d9964) 22%, transparent);
+  border-color: var(--md-dash-3, #2d9964);
+  color: var(--md-dash-3, #2d9964);
+}
+body .money-dashboard .wd-cat-note {
+  color: var(--md-text-secondary);
+  font-size: 11px;
+  margin: 0 0 8px;
+}
+body .money-dashboard .wd-cat-sub {
+  color: var(--md-text-tertiary);
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  margin: 10px 0 5px;
+  text-transform: uppercase;
+}
+
+/* --- Inline category picker -------------------------------------------------
+   Writes straight back into Expenses.md. Unset reads as a muted prompt; set
+   reads as the category's own pill, so the two states are never confused. */
+body .money-dashboard select.wd-cat-select {
+  max-width: 100%;
+  height: 22px;
+  padding: 0 4px;
+  border: 1px solid transparent;
+  border-radius: 4px;
+  background-color: color-mix(in srgb, var(--bar-color, var(--md-accent)) 14%, transparent);
+  color: var(--bar-color, var(--md-accent));
+  font-size: 11px;
+  font-weight: 500;
+  cursor: pointer;
+}
+body .money-dashboard select.wd-cat-select.is-empty {
+  background-color: transparent;
+  border-color: var(--md-border-strong);
+  color: var(--md-text-tertiary);
+  font-style: italic;
+  font-weight: 400;
+}
+body .money-dashboard select.wd-cat-select:hover {
+  border-color: color-mix(in srgb, var(--bar-color, var(--md-accent)) 45%, transparent);
+}
+body .money-dashboard select.wd-cat-select.is-empty:hover {
+  border-color: var(--md-accent);
+  color: var(--md-text-secondary);
+}
+body .money-dashboard select.wd-cat-select:disabled { opacity: 0.5; cursor: progress; }
+
+/* An unanswered merchant is a question, not a value, so it reads as muted
+   italic text rather than borrowing the category pill's chip styling. */
+body .money-dashboard .wd-money-ask {
+  color: var(--md-text-tertiary);
+  font-size: 11px;
+  font-style: italic;
+}
+body .money-dashboard .wd-money-more {
+  margin-top: 9px;
+  padding: 5px 11px;
+  border: 1px solid var(--md-border-strong);
+  border-radius: 5px;
+  background-color: var(--md-bg);
+  box-shadow: none;
+  color: var(--md-text-secondary);
+  font-size: 12px;
+  cursor: pointer;
+}
+body .money-dashboard .wd-money-more:hover {
+  background-color: var(--md-hover);
+  color: var(--md-text-primary);
+}
+body .money-dashboard .wd-money-foot {
+  color: var(--md-text-tertiary);
+  font-size: 11px;
+  margin-top: 8px;
+}
+
+/* ============================================================================
+   REGION 26 - MONEY ACCOUNTS (cssclass: money-accounts)
+   ----------------------------------------------------------------------------
+   Only what the per-account billing-cycle page adds on top of REGION 25: an
+   active state on the account card, a utilisation meter, and the due-date line.
+   Everything else is reused, deliberately, so the two money pages read as one.
+   ============================================================================ */
+
+/* The account you are looking at. A ring rather than a louder fill, so the
+   card's own hue still reads as its identity. */
+body .money-accounts .wd-card.is-active {
+  border-color: var(--card-color, var(--md-accent));
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--card-color, var(--md-accent)) 30%, transparent);
+}
+
+/* Utilisation meter. Colour is earned by the number, not decorative: green
+   under 30%, amber to 75%, red above. */
+body .money-accounts .wd-acct-track {
+  height: 5px;
+  margin: 7px 0 5px;
+  border-radius: 3px;
+  background-color: var(--md-hover);
+  overflow: hidden;
+}
+body .money-accounts .wd-acct-fill {
+  height: 100%;
+  min-width: 2px;
+  border-radius: 3px;
+  background-color: var(--md-dash-3, #2d9964);
+}
+body .money-accounts .wd-acct-fill.is-mid  { background-color: var(--md-dash-4, #d9730d); }
+body .money-accounts .wd-acct-fill.is-high { background-color: var(--md-dash-6, #d75f96); }
+
+/* Due date. Silent until it matters. */
+body .money-accounts .wd-acct-due.is-soon { color: var(--md-dash-4, #d9730d); font-weight: 500; }
+body .money-accounts .wd-acct-due.is-overdue { color: var(--md-dash-6, #d75f96); font-weight: 600; }
+
+/* Two headers on one page, so the second gets less air than the first. */
+body .money-accounts .wd-money-top + .wd-grid { margin-top: 0; }
+body .money-accounts .wd-grid + .wd-money-top { margin-top: 1.6em; }
+
+/* ============================================================================
+   REGION 27 - MOBILE (Obsidian mobile, and any narrow pane)
+   ----------------------------------------------------------------------------
+   Additive only: every rule here is scoped to `body.is-phone`, `body.is-mobile`
+   or a width query, so nothing on the desktop changes. Obsidian sets is-phone
+   and is-tablet itself; the width query covers a narrow desktop sidebar pane
+   too, which is the same problem.
+
+   The four things that actually break on a ~390px screen:
+     1. Seven stat cards in a 150px-minimum grid overflow.
+     2. A six-column table cannot fit, so it scrolls sideways and hides the
+        amount, which is the column you came for.
+     3. Inputs under 16px make iOS zoom the whole page on focus.
+     4. 22px and 26px controls are below the 44px touch target guidance.
+   ============================================================================ */
+
+/* --- Page chrome: reclaim the horizontal space -------------------------- */
+body.is-phone .money-dashboard.markdown-preview-view,
+body.is-phone .money-dashboard .markdown-preview-sizer {
+  padding-left: 10px !important;
+  padding-right: 10px !important;
+}
+body.is-phone .money-dashboard h1 { font-size: var(--h1-size); }
+
+/* --- Header: stack, so the month picker never crowds the title ---------- */
+@media (max-width: 620px) {
+  body .money-dashboard .wd-money-top {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 9px;
+  }
+  body .money-dashboard .wd-money-nav { justify-content: flex-start; }
+  body .money-dashboard .wd-money-pick { flex: 1 1 auto; }
+  body .money-dashboard .wd-money-title { font-size: 19px; }
+}
+
+/* --- Stat cards: two per row, and quieter padding ----------------------- */
+@media (max-width: 620px) {
+  body .money-dashboard .wd-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+    margin: 0.8em 0 1.2em;
+  }
+  body .money-dashboard .wd-card { padding: 10px 11px; }
+  body .money-dashboard .wd-value { font-size: 19px; }
+  body .money-dashboard .wd-label { font-size: 12px; }
+  body .money-dashboard .wd-detail { font-size: 11px; }
+}
+/* One per row is unreadable, so below 360px keep two and let the text shrink
+   rather than collapsing the grid. */
+@media (max-width: 359px) {
+  body .money-dashboard .wd-value { font-size: 17px; }
+  body .money-dashboard .wd-label { font-size: 11px; }
+}
+
+/* --- Panels and breakdown bars ------------------------------------------ */
+@media (max-width: 620px) {
+  body .money-dashboard .wd-money-panel { padding: 11px 12px; margin-bottom: 1.2em; }
+  body .money-dashboard .wd-money-cols { gap: 0; }
+  /* A category name needs more room than a percentage does. */
+  body .money-dashboard .wd-money-row { grid-template-columns: minmax(0, 44%) 1fr auto; }
+  body .money-dashboard .wd-money-name { font-size: 12px; }
+  body .money-dashboard .wd-money-pct { display: none; }   /* the bar already shows share */
+}
+
+/* --- Trend chart: 12 bars in ~350px --------------------------------------
+   Tighten the gap and the labels rather than dropping months: a shorter
+   window would silently change what the chart means. */
+@media (max-width: 620px) {
+  body .money-dashboard .wd-money-chart { gap: 3px; height: 92px; }
+  body .money-dashboard .wd-money-xlabel { font-size: 9px; letter-spacing: 0; }
+}
+@media (max-width: 400px) {
+  body .money-dashboard .wd-money-chart { gap: 2px; }
+  /* Every other label, so they stop colliding. The bars all stay. */
+  body .money-dashboard .wd-money-col:nth-child(even) .wd-money-xlabel { visibility: hidden; }
+}
+
+/* --- Tables: drop the columns you did not come for ----------------------
+   `wd-col-minor` is set in the dataviewjs on Card, Method, Account and
+   In/out. Date, Merchant, Category and Amount stay, so the table fits
+   without sideways scrolling and the amount is always visible. */
+@media (max-width: 620px) {
+  body .money-dashboard table.wd-money-table .wd-col-minor { display: none; }
+  body .money-dashboard table.wd-money-table { font-size: 12px; }
+  body .money-dashboard table.wd-money-table th,
+  body .money-dashboard table.wd-money-table td { padding: 6px 5px; }
+  body .money-dashboard .wd-money-tag { font-size: 10px; padding: 1px 5px; }
+}
+
+/* --- Touch targets and iOS zoom ----------------------------------------- */
+body.is-mobile .money-dashboard .wd-money-step {
+  width: 40px;
+  height: 36px;
+  font-size: 16px;
+}
+body.is-mobile .money-dashboard .wd-money-pick,
+body.is-mobile .money-dashboard .wd-money-filter,
+body.is-mobile .money-dashboard select.wd-cat-select {
+  height: 36px;
+  /* 16px stops iOS zooming the page when the control takes focus. */
+  font-size: 16px;
+}
+body.is-mobile .money-dashboard .wd-money-search {
+  height: 38px;
+  font-size: 16px;
+}
+body.is-mobile .money-dashboard .wd-money-more {
+  padding: 9px 14px;
+  font-size: 14px;
+}
+/* The category chips are the main tap target on the inbox note. */
+body.is-mobile .money-dashboard .wd-cat-chip {
+  padding: 8px 12px;
+  font-size: 13px;
+}
+body.is-mobile .money-dashboard .wd-cat-wrap { gap: 8px; }
+/* A set picker sits inside a table cell, so it must not force the row wide. */
+body.is-mobile .money-dashboard select.wd-cat-select { max-width: 46vw; }
+
+/* --- Account cards on the billing-cycle page ---------------------------- */
+@media (max-width: 620px) {
+  body .money-accounts .wd-acct-due { font-size: 11px; }
+  body .money-accounts .wd-money-badge { font-size: 10px; }
+}
+
+/* --- Nothing may scroll the page sideways ------------------------------- */
+body.is-phone .money-dashboard .wd-money-tablewrap { -webkit-overflow-scrolling: touch; }
+body.is-phone .money-dashboard { overflow-x: hidden; }
+
+/* ============================================================================
+   REGION 28 - CATEGORY COLOURS
+   ----------------------------------------------------------------------------
+   One colour per category, explicit rather than hashed.
+
+   The previous scheme hashed the category name into the seven --nt-dash-* slots.
+   With 22 categories that guaranteed collisions: 15 shared a hue with another,
+   and FIVE were the same cyan (Groceries, Health & Medical, Fitness, Insurance,
+   Transfer). The category column was therefore not readable as colour at all.
+
+   Generated by maximising the minimum CIE Lab distance between every pair,
+   after fixing semantic anchors so the common ones are learnable: green
+   groceries, orange dining, blue transport, red health. Minimum separation
+   among real categories is 24.8 in light and 12.0 in dark. `Other` and
+   `Uncategorised` are deliberately dull and deliberately close to each other,
+   since both mean "no useful label".
+
+   Trade-off against the old scheme: these do NOT follow the plainpage-palette
+   switcher, because a hue that carries meaning must not change under the
+   reader's feet. Everything else on the dashboards still follows the palette.
+   ============================================================================ */
+body.theme-light {
+  --md-cat-rent-home:                     #824727;   /* Rent & Home */
+  --md-cat-farm:                          #7d8b00;   /* Farm */
+  --md-cat-groceries:                     #2f9e44;   /* Groceries */
+  --md-cat-dining-delivery:               #e8590c;   /* Dining & Delivery */
+  --md-cat-transport-fuel:                #1c7ed6;   /* Transport & Fuel */
+  --md-cat-bills-utilities:               #1d228c;   /* Bills & Utilities */
+  --md-cat-shopping:                      #ae3ec9;   /* Shopping */
+  --md-cat-health-medical:                #e03131;   /* Health & Medical */
+  --md-cat-fitness:                       #82276f;   /* Fitness */
+  --md-cat-personal-care:                 #2c61dd;   /* Personal Care */
+  --md-cat-entertainment-subscriptions:   #be8227;   /* Entertainment & Subscriptions */
+  --md-cat-festival-celebration:          #dbbd24;   /* Festival & Celebration */
+  --md-cat-travel:                        #27b7be;   /* Travel */
+  --md-cat-education:                     #82273d;   /* Education */
+  --md-cat-insurance:                     #7abe27;   /* Insurance */
+  --md-cat-loan-emi:                      #8658bb;   /* Loan & EMI */
+  --md-cat-investments:                   #776d31;   /* Investments */
+  --md-cat-family-gifts:                  #d6336c;   /* Family & Gifts */
+  --md-cat-cash-withdrawal:               #2791be;   /* Cash Withdrawal */
+  --md-cat-fees-interest:                 #5427be;   /* Fees & Interest */
+  --md-cat-taxes:                         #be2799;   /* Taxes */
+  --md-cat-other:                         #6b7280;   /* Other */
+  --md-cat-income:                        #087f5b;   /* Income */
+  --md-cat-transfer:                      #495a8f;   /* Transfer */
+  --md-cat-uncategorised:                 #9aa0a6;   /* Uncategorised */
+}
+body.theme-dark {
+  --md-cat-rent-home:                     #cf865e;   /* Rent & Home */
+  --md-cat-farm:                          #c3d23e;   /* Farm */
+  --md-cat-groceries:                     #7ad78c;   /* Groceries */
+  --md-cat-dining-delivery:               #e2a483;   /* Dining & Delivery */
+  --md-cat-transport-fuel:                #83b5e2;   /* Transport & Fuel */
+  --md-cat-bills-utilities:               #565cd7;   /* Bills & Utilities */
+  --md-cat-shopping:                      #cd87de;   /* Shopping */
+  --md-cat-health-medical:                #e28383;   /* Health & Medical */
+  --md-cat-fitness:                       #cf5eb8;   /* Fitness */
+  --md-cat-personal-care:                 #5e89d4;   /* Personal Care */
+  --md-cat-entertainment-subscriptions:   #e2bc83;   /* Entertainment & Subscriptions */
+  --md-cat-festival-celebration:          #e6b237;   /* Festival & Celebration */
+  --md-cat-travel:                        #83dde2;   /* Travel */
+  --md-cat-education:                     #cf5e7a;   /* Education */
+  --md-cat-insurance:                     #b7e283;   /* Insurance */
+  --md-cat-loan-emi:                      #a955d3;   /* Loan & EMI */
+  --md-cat-investments:                   #c2b56b;   /* Investments */
+  --md-cat-family-gifts:                  #e283a4;   /* Family & Gifts */
+  --md-cat-cash-withdrawal:               #83c5e2;   /* Cash Withdrawal */
+  --md-cat-fees-interest:                 #a083e2;   /* Fees & Interest */
+  --md-cat-taxes:                         #e283ca;   /* Taxes */
+  --md-cat-other:                         #acb0b9;   /* Other */
+  --md-cat-income:                        #3bd1a3;   /* Income */
+  --md-cat-transfer:                      #94a1c8;   /* Transfer */
+  --md-cat-uncategorised:                 #aeb2b7;   /* Uncategorised */
+}
+
+/* ============================================================================
+   REGION 29 - MONEY MAP (dataviewjs heatmap)
+   ----------------------------------------------------------------------------
+   A real accumulating-kernel heatmap, rendered by the dataviewjs in Money Map
+   onto a <canvas> over OpenStreetMap raster tiles. No plugin, no JS library.
+
+   The Leaflet plugin was tried first and dropped: its GeoJSON layer turns
+   Points into pins and only fills Polygons, so real-world circles were the
+   closest it could get to heat, and those shrink as you zoom. A canvas kernel
+   measured in screen pixels stays constant, which is what a heatmap needs.
+
+   Layer order inside .wd-hmap: tiles, then the heat canvas, then a transparent
+   hit layer that owns every pointer event, then the tooltip and controls.
+   ============================================================================ */
+
+/* The map is a BANNER. Nothing sits above it, it reaches the pane edges, and its
+   bottom edge dissolves into the page instead of ending on a border.
+
+   Two things are needed to reach the edges from inside a note:
+     1. drop the readable-line-width cap, or the note itself is narrower than
+        the pane and no negative margin can fix that;
+     2. pull outwards by --file-margins, which is the padding Obsidian puts
+        around note content.
+   Both are scoped to .money-map, so no other note is affected. */
+/* Both forms on purpose. Obsidian puts cssclasses ON the preview/source view
+   element, so ".money-map .markdown-preview-view" would never match it; the
+   descendant form covers the case where the class lands on an ancestor instead. */
+.money-map .markdown-preview-view,
+.markdown-preview-view.money-map,
+.money-map .markdown-preview-sizer,
+.markdown-preview-view.money-map .markdown-preview-sizer,
+.money-map .markdown-preview-sizer > div,
+.money-map .cm-sizer,
+.markdown-source-view.money-map .cm-sizer,
+.money-map .cm-contentContainer {
+  max-width: none !important;
+  padding-left: 0 !important;
+  padding-right: 0 !important;
+}
+.money-map .markdown-preview-sizer,
+.markdown-preview-view.money-map .markdown-preview-sizer,
+.money-map .cm-sizer,
+.markdown-source-view.money-map .cm-sizer { padding-top: 0 !important; }
+/* The dataviewjs wrapper can carry its own margin, which would reappear as a
+   gutter the moment the container padding is gone. */
+.money-map .block-language-dataviewjs { margin: 0; padding: 0; }
+
+/* The note's own title would be "something above the map", so it goes too. */
+.money-map .inline-title { display: none; }
+
+.money-map .wd-hmap {
+  position: relative;
+  overflow: hidden;
+  height: clamp(420px, 66vh, 780px);
+  /* No negative margins. The container's padding is zeroed above instead, which
+     is deterministic: --file-margins is a four-value shorthand in this theme and
+     cannot be multiplied in a calc(). */
+  margin: 0;
+  width: 100%;
+  border: 0;
+  border-radius: 0;
+  background: var(--background-secondary);
+  touch-action: none;                 /* we handle pan and pinch ourselves */
+  cursor: grab;
+  contain: paint;
+  box-shadow:
+    inset 0 0 120px 40px color-mix(in srgb, var(--background-primary) 34%, transparent),
+    inset 0 46px 60px -30px color-mix(in srgb, var(--background-primary) 58%, transparent);
+}
+
+/* The gradient that makes it a banner. A real element rather than a mask, so the
+   tiles stay fully opaque and only the bottom edge fades. It must not eat a
+   drag, and it must sit under the controls. */
+.money-map .wd-hmap-fade {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  z-index: 2;
+  height: 110px;
+  pointer-events: none;
+  background: linear-gradient(to bottom,
+    transparent 0%,
+    color-mix(in srgb, var(--background-primary) 40%, transparent) 55%,
+    color-mix(in srgb, var(--background-primary) 88%, transparent) 82%,
+    var(--background-primary) 100%);
+}
+
+/* The hero: the number you came for, over the picture that explains it. It sits
+   in the gradient zone at the bottom of the banner, so it is legible without
+   needing a plate behind it. */
+.money-map .wd-hmap-hero {
+  position: absolute;
+  bottom: 26px;
+  left: clamp(20px, 3.4vw, 56px);
+  z-index: 3;
+  pointer-events: none;
+  animation: wd-hero-in 520ms cubic-bezier(0.2, 0.7, 0.2, 1) both;
+}
+.money-map .wd-hmap-hero-amt {
+  font-size: clamp(34px, 5.2vw, 60px);
+  font-weight: 660;
+  line-height: 1.02;
+  letter-spacing: -0.025em;
+  font-variant-numeric: tabular-nums;
+  color: var(--text-normal);
+  /* A whisper of a shadow, so it survives a pale rooftop under the gradient
+     without looking like a shadowed heading. */
+  text-shadow: 0 1px 18px color-mix(in srgb, var(--background-primary) 72%, transparent);
+}
+.money-map .wd-hmap-hero-sub {
+  margin-top: 5px;
+  font-size: 11.5px;
+  font-weight: 500;
+  letter-spacing: 0.055em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  text-shadow: 0 1px 12px color-mix(in srgb, var(--background-primary) 72%, transparent);
+}
+@keyframes wd-hero-in {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: none; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .money-map .wd-hmap-hero { animation: none; }
+}
+
+/* The zoom readout used to live in the panel head, which no longer exists. */
+.money-map .wd-hmap-zoom {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  z-index: 4;
+  padding: 2px 7px;
+  font-size: 10.5px;
+  color: var(--text-muted);
+  pointer-events: none;
+  background: color-mix(in srgb, var(--background-primary) 72%, transparent);
+  border-radius: 6px;
+}
+
+/* The summary line that used to sit above the map now rides on the legend. */
+.money-map .wd-hmap-legend-sum {
+  margin-left: auto;
+  font-size: 10.5px;
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+.money-map .wd-hmap.is-dragging { cursor: grabbing; }
+
+.money-map .wd-hmap-tiles,
+.money-map .wd-hmap-heat,
+.money-map .wd-hmap-hit {
+  position: absolute;
+  inset: 0;
+}
+.money-map .wd-hmap-tile {
+  position: absolute;
+  width: 256px;
+  height: 256px;
+  max-width: none;                    /* Obsidian caps images at 100% */
+  user-select: none;
+  -webkit-user-drag: none;
+  pointer-events: none;
+  /* Slightly muted so the heat reads on top of the map rather than competing
+     with road and label colour. */
+  filter: saturate(0.42) contrast(0.9) brightness(1.03);
+}
+.theme-dark .money-map .wd-hmap-tile {
+  /* Inverting the raster is far cheaper than fetching a second tile set, and
+     hue-rotate puts the greens and blues back the right way round. */
+  filter: invert(0.92) hue-rotate(180deg) saturate(0.6) brightness(0.92);
+}
+.money-map .wd-hmap-heat {
+  pointer-events: none;
+  mix-blend-mode: normal;
+}
+.theme-dark .money-map .wd-hmap-heat { mix-blend-mode: screen; }
+.money-map .wd-hmap-hit { z-index: 3; }
+
+.money-map .wd-hmap-ctrl {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  z-index: 4;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.money-map .wd-hmap-btn {
+  width: 30px;
+  height: 30px;
+  padding: 0;
+  font-size: 15px;
+  font-weight: 600;
+  line-height: 1;
+  color: var(--text-normal);
+  cursor: pointer;
+  /* Translucent and blurred, so the map shows through and the controls read as
+     glass sitting on it rather than as chrome bolted over it. */
+  background: color-mix(in srgb, var(--background-primary) 74%, transparent);
+  backdrop-filter: blur(8px) saturate(1.2);
+  border: 1px solid color-mix(in srgb, var(--text-normal) 12%, transparent);
+  border-radius: 9px;
+  box-shadow: 0 2px 10px rgb(0 0 0 / 14%);
+  transition: background 140ms ease, transform 140ms ease;
+}
+.money-map .wd-hmap-btn:active:not(:disabled) { transform: scale(0.94); }
+.money-map .wd-hmap-btn-wide { width: 30px; font-size: 10px; letter-spacing: 0.02em; }
+.money-map .wd-hmap-btn:hover:not(:disabled) { background: var(--background-modifier-hover); }
+.money-map .wd-hmap-btn:disabled { opacity: 0.4; cursor: default; }
+
+.money-map .wd-hmap-tip {
+  position: absolute;
+  z-index: 5;
+  max-width: 240px;
+  padding: 7px 9px;
+  pointer-events: none;
+  background: var(--background-primary);
+  border: 1px solid var(--md-border, var(--background-modifier-border));
+  border-radius: 8px;
+  box-shadow: 0 3px 10px rgb(0 0 0 / 22%);
+}
+.money-map .wd-hmap-tip-name { font-size: 12px; font-weight: 600; color: var(--text-normal); }
+.money-map .wd-hmap-tip-amt {
+  font-size: 15px;
+  font-weight: 650;
+  font-variant-numeric: tabular-nums;
+  color: var(--text-normal);
+}
+.money-map .wd-hmap-tip-sub { font-size: 10.5px; color: var(--text-muted); }
+
+.money-map .wd-hmap-attr {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  z-index: 4;
+  padding: 2px 6px;
+  font-size: 9.5px;
+  color: var(--text-faint);
+  pointer-events: none;
+  background: color-mix(in srgb, var(--background-primary) 74%, transparent);
+  border-top-left-radius: 6px;
+}
+
+.money-map .wd-hmap-legend {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  /* Pulled up into the banner's foot and pushed right, so the hero owns the left
+     and the two never fight for the same corner. */
+  margin: -46px 0 22px auto;
+  padding-right: 2px;
+  position: relative;
+  z-index: 3;
+  width: min(320px, 62%);
+}
+.money-map .wd-hmap-legend-bar { height: 5px; opacity: 0.85; }
+.money-map .wd-hmap-legend-cap { font-size: 9.5px; letter-spacing: 0.04em; }
+.money-map .wd-hmap-legend-cap {
+  font-size: 10px;
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+.money-map .wd-hmap-legend-bar {
+  flex: 1;
+  height: 7px;
+  border-radius: 4px;
+  /* Same stops as the LUT in the dataviewjs. If one changes, change both. */
+  background: linear-gradient(90deg, #2c3d8f 0%, #1f8fc4 25%, #3fb878 45%,
+                              #e9d34a 62%, #ef8c3b 80%, #d6335a 100%);
+}
+
+.money-map .wd-money-clickable { cursor: pointer; }
+.money-map .wd-money-clickable:hover { background: var(--background-modifier-hover); }
+
+/* A phone gets a shorter map, since 480px of map plus the table leaves nothing
+   of the viewport for anything else. */
+@media (max-width: 767px) {
+  .money-map .wd-hmap { height: 300px; }
+  .money-map .wd-hmap-fade { height: 80px; }
+  .money-map .wd-hmap-legend-sum { display: none; }   /* no room beside the bar */
+}
+body.is-phone .money-map .wd-hmap { height: 300px; }
+body.is-phone .money-map .wd-hmap-fade { height: 80px; }
+body.is-phone .money-map .wd-hmap-btn { width: 34px; height: 34px; }
+
+/* ============================================================================
+   REGION 30 - DESCRIPTION
+   ----------------------------------------------------------------------------
+   Your own words for what a transaction was actually for. The SMS almost never
+   carries it, so it is filled by hand from the prompt panel on Money Dashboard,
+   exactly like an uncategorised row. A dash means "nothing worth noting".
+   ============================================================================ */
+
+.money-dashboard .wd-money-desc {
+  width: 100%;
+  min-width: 120px;
+  padding: 3px 6px;
+  font-family: inherit;
+  font-size: 12px;
+  color: var(--text-normal);
+  background: var(--background-primary);
+  border: 1px solid var(--md-border, var(--background-modifier-border));
+  border-radius: 6px;
+}
+.money-dashboard .wd-money-desc:focus {
+  border-color: var(--interactive-accent);
+  outline: none;
+}
+.money-dashboard .wd-money-desc.is-empty {
+  /* Same cue the empty category picker uses: this row is asking for something. */
+  border-style: dashed;
+  border-color: var(--text-faint);
+}
+.money-dashboard .wd-money-desc::placeholder { color: var(--text-faint); }
+.money-dashboard .wd-money-desc:disabled { opacity: 0.5; }
+
+.money-dashboard td.is-desc {
+  max-width: 220px;
+  overflow: hidden;
+  color: var(--text-muted);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* iOS zooms the page for any input under 16px, so the editor gets a real size
+   on a phone even though the table text stays small. */
+body.is-phone .money-dashboard .wd-money-desc,
+body.is-mobile .money-dashboard .wd-money-desc { font-size: 16px; }
+
+/* ============================================================================
+   REGION 31 - LOCATION IN TABLES
+   ----------------------------------------------------------------------------
+   The Location cell holds an Apple Maps markdown link. Only the label is shown;
+   the URL becomes the link target, so a place can be opened in Maps to jog the
+   memory when deciding a category or writing a description.
+
+   Labels are long ("12, Station Road, Pune, Maharashtra"), so the cell is
+   capped and ellipsised rather than allowed to stretch the table.
+   ============================================================================ */
+
+.money-dashboard td.is-loc,
+.money-accounts td.is-loc {
+  max-width: 190px;
+  overflow: hidden;
+  font-size: 11.5px;
+  color: var(--text-muted);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.money-dashboard .wd-money-loc,
+.money-accounts .wd-money-loc {
+  color: var(--text-muted);
+  text-decoration: none;
+  border-bottom: 1px dotted var(--text-faint);
+}
+.money-dashboard .wd-money-loc:hover,
+.money-accounts .wd-money-loc:hover {
+  color: var(--text-accent);
+  border-bottom-color: var(--text-accent);
+}
+
+/* On a phone the prompt panels keep Location, because it is the whole reason
+   the column exists there. Narrower, so it does not crowd the merchant. */
+@media (max-width: 767px) {
+  .money-dashboard td.is-loc { max-width: 96px; font-size: 11px; }
+}
+body.is-phone .money-dashboard td.is-loc { max-width: 96px; font-size: 11px; }
+
+/* ============================================================================
+   REGION 32 - EDIT IN PLACE
+   ----------------------------------------------------------------------------
+   Merchant and Description are editable directly in the Transactions table.
+   Click-to-edit, not a live input: this table is the permanent record of real
+   money, and forty rows of open inputs invite an accidental edit from a stray
+   click or a scroll on a phone. The affordance is deliberately quiet, a dotted
+   underline on hover, so the table still reads as a table.
+   ============================================================================ */
+
+.money-dashboard td.wd-editable { cursor: text; }
+.money-dashboard .wd-money-edit {
+  display: inline-block;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  border-bottom: 1px dotted transparent;
+}
+.money-dashboard td.wd-editable:hover .wd-money-edit {
+  border-bottom-color: var(--text-faint);
+}
+/* An empty cell needs something to aim at, or there is nothing to click. */
+.money-dashboard .wd-money-edit.is-empty::before {
+  content: "＋";
+  font-size: 11px;
+  color: var(--text-faint);
+}
+.money-dashboard td.wd-editable:hover .wd-money-edit.is-empty::before {
+  color: var(--text-accent);
+}
+
+/* ============================================================================
+   REGION 33 - MONEY MAP, THE PAGE
+   ----------------------------------------------------------------------------
+   The design pass. The banner carries the picture and the headline figure; the
+   table below is the detail. So the table is made quiet: no heavy rules, more
+   air, and one piece of colour per row that MEANS something (the heat colour
+   that place is drawn with on the map above).
+   ============================================================================ */
+
+/* The container has no padding any more, so every block below the banner brings
+   its own. One value, so the table and the prose line up down the left edge. */
+.money-map .wd-map-below,
+.money-map .markdown-preview-sizer > div > p,
+.money-map .markdown-preview-sizer > p {
+  padding-inline: clamp(20px, 3.4vw, 56px);
+}
+.money-map .markdown-preview-sizer > div > p,
+.money-map .markdown-preview-sizer > p {
+  max-width: 68ch;
+}
+
+/* Two columns under a full-width banner. A narrow table alone left a large void
+   to its right; the second column answers a different question about the same
+   view, so the width is earned rather than padded. */
+.money-map .wd-map-below {
+  display: grid;
+  grid-template-columns: minmax(0, 1.55fr) minmax(0, 1fr);
+  gap: clamp(24px, 3vw, 52px);
+  align-items: start;
+  margin-bottom: 34px;
+}
+/* One column when there is not enough width for two to be readable. */
+@media (max-width: 1100px) {
+  .money-map .wd-map-below { grid-template-columns: minmax(0, 1fr); gap: 26px; }
+}
+.money-map .wd-map-places .wd-money-table { width: 100%; }
+.money-map .wd-hmap-legend { padding-right: clamp(20px, 3.4vw, 56px); }
+
+/* The category bars in the second column. */
+.money-map .wd-map-cats .wd-money-row {
+  display: grid;
+  grid-template-columns: minmax(88px, auto) 1fr auto;
+  gap: 10px;
+  align-items: center;
+  padding: 5px 0;
+}
+.money-map .wd-map-cats .wd-money-bar {
+  height: 7px;
+  overflow: hidden;
+  background: color-mix(in srgb, var(--text-normal) 7%, transparent);
+  border-radius: 4px;
+}
+.money-map .wd-map-cats .wd-money-bar-fill {
+  height: 100%;
+  border-radius: 4px;
+  transition: width 220ms cubic-bezier(0.2, 0.7, 0.2, 1);
+}
+@media (prefers-reduced-motion: reduce) {
+  .money-map .wd-map-cats .wd-money-bar-fill { transition: none; }
+}
+.money-map .wd-map-cats .wd-money-amt {
+  font-size: 11.5px;
+  font-variant-numeric: tabular-nums;
+  color: var(--text-muted);
+}
+.money-map .wd-map-cats .wd-money-bar-label { min-width: 0; }
+
+.money-map .wd-money-table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+}
+.money-map .wd-money-table th {
+  padding: 0 10px 8px;
+  font-size: 9.5px;
+  font-weight: 600;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: var(--text-faint);
+  text-align: left;
+  border-bottom: 1px solid color-mix(in srgb, var(--text-normal) 8%, transparent);
+}
+.money-map .wd-money-table td {
+  padding: 9px 10px;
+  font-size: 12.5px;
+  vertical-align: middle;
+  border-bottom: 1px solid color-mix(in srgb, var(--text-normal) 5%, transparent);
+}
+.money-map .wd-money-table tr:last-child td { border-bottom: 0; }
+.money-map .wd-money-table tbody tr {
+  transition: background 120ms ease;
+}
+.money-map .wd-money-table tbody tr:hover {
+  background: color-mix(in srgb, var(--text-normal) 4%, transparent);
+}
+
+/* The heat swatch. Small, round, and exactly the colour the map paints, which is
+   what ties the two halves of the page into one thing. */
+.money-map .wd-swatch-col { width: 22px; padding-right: 0 !important; }
+.money-map .wd-swatch {
+  display: block;
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  box-shadow: 0 0 0 3px color-mix(in srgb, currentColor 0%, transparent);
+}
+
+.money-map .is-place {
+  font-weight: 500;
+  color: var(--text-normal);
+}
+
+/* A bar behind the spend figure, sized by share of what is on screen. Faster to
+   read than the percentage beside it, and it makes the column scannable. */
+.money-map .is-spend {
+  position: relative;
+  font-variant-numeric: tabular-nums;
+  font-weight: 550;
+  text-align: right;
+}
+.money-map .is-spend::before {
+  content: "";
+  position: absolute;
+  top: 50%;
+  right: 10px;
+  width: var(--bar, 0%);
+  height: 18px;
+  transform: translateY(-50%);
+  background: color-mix(in srgb, var(--text-accent) 13%, transparent);
+  border-radius: 3px;
+  pointer-events: none;
+}
+.money-map .wd-money-num { text-align: right; font-variant-numeric: tabular-nums; }
+.money-map .is-empty-row { color: var(--text-faint); text-align: center; padding: 22px 10px; }
+
+/* The pills were sized for a dense dashboard table; here they can be lighter. */
+.money-map .wd-money-pill {
+  font-size: 10px;
+  padding: 2px 7px;
+  border-radius: 5px;
+}
+
+/* Panel head: quiet label, the count and the link pushed right. */
+.money-map .wd-money-panel-head {
+  display: flex;
+  gap: 10px;
+  align-items: baseline;
+  margin-bottom: 10px;
+}
+.money-map .wd-money-panel-title {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+.money-map .wd-money-panel-note { font-size: 10.5px; color: var(--text-faint); }
+.money-map .wd-money-panel-head .wd-money-link { margin-left: auto; font-size: 10.5px; }
+.money-map .wd-money-foot {
+  margin-top: 10px;
+  font-size: 10.5px;
+  line-height: 1.55;
+  color: var(--text-faint);
+}
+
+/* On a phone the banner is shorter, the hero smaller, and the swatch column and
+   the share bar earn their keep more than the extra padding does. */
+@media (max-width: 767px) {
+  .money-map .wd-hmap { height: clamp(300px, 46vh, 420px); }
+  .money-map .wd-hmap-hero { bottom: 18px; left: 16px; }
+  .money-map .wd-hmap-hero-amt { font-size: clamp(28px, 8vw, 40px); }
+  .money-map .wd-hmap-legend { width: 58%; margin-top: -34px; }
+  .money-map .wd-money-table td { padding: 8px 6px; font-size: 12px; }
+}
+
+/* The "Mostly" cell. The pill alone read as a label for the whole row, so its
+   share sits beside it and a +N says how many other categories are hiding in
+   that place. Hovering the cell lists them all with counts. */
+.money-map td.is-mostly {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  align-items: center;
+}
+.money-map .wd-mostly-share {
+  font-size: 10.5px;
+  font-variant-numeric: tabular-nums;
+  color: var(--text-muted);
+}
+.money-map .wd-mostly-more {
+  padding: 1px 5px;
+  font-size: 9.5px;
+  font-weight: 600;
+  color: var(--text-faint);
+  background: color-mix(in srgb, var(--text-normal) 7%, transparent);
+  border-radius: 4px;
+  cursor: help;
+}
+
+/* ============================================================================
+   PLUGIN ADDITIONS
+   ----------------------------------------------------------------------------
+   Values that change per element are passed as CSS custom properties rather
+   than inline styles. These rules consume them.
+   ============================================================================ */
+body .money-dashboard .is-hidden { display: none !important; }
+body .money-dashboard .wd-money-titlerow { display: flex; align-items: center; gap: 9px; }
+body .money-dashboard .wd-money-subhead { margin-top: 14px; }
+body .money-dashboard .wd-money-empty-sub { margin-top: 8px; }
+body .money-dashboard .wd-money-fill { width: var(--bar-width, 0); }
+body .money-dashboard .wd-money-colbar { height: var(--col-height, 2px); }
+body .money-dashboard .wd-money-col.is-inert { cursor: default; }
+body .money-dashboard table.wd-money-table th.is-sortable { cursor: pointer; }
+body .money-accounts .wd-acct-fill { width: var(--fill, 0); }
+body .money-dashboard .wd-card.is-active { border-color: var(--card-color, var(--md-accent)); }
+.money-map .wd-hmap-tile { left: var(--x, 0); top: var(--y, 0); }
+.money-map .wd-hmap-heat { width: var(--w, 100%); height: var(--h, 100%); }
+.money-map .wd-hmap-tip { left: var(--x, 0); top: var(--y, 0); }
+.money-map .wd-swatch { background: var(--swatch, var(--md-accent)); }
+.money-map .wd-hmap.is-tileless { background: var(--background-secondary); }
