@@ -11,13 +11,13 @@ describe("locParts", () => {
     expect(locParts("")).toBeNull();
   });
   it("refuses a non-http link target", () => {
-    expect(locParts("[Home](javascript:alert(1))")?.url).toBe("");
+    expect(locParts("[Sample Place](javascript:alert(1))")?.url).toBe("");
   });
 });
 
 describe("parseLoc", () => {
   it("reads coordinates from an Apple Maps link", () => {
-    expect(parseLoc("[Home](https://maps.apple.com/?ll=12.97,77.59)")).toEqual({ lat: 12.97, lng: 77.59, label: "Home" });
+    expect(parseLoc("[Sample Place](https://maps.apple.com/?ll=12.97,77.59)")).toEqual({ lat: 12.97, lng: 77.59, label: "Sample Place" });
   });
   it("reads bare coordinates", () => {
     expect(parseLoc("12.97, 77.59")).toMatchObject({ lat: 12.97, lng: 77.59 });

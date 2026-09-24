@@ -146,7 +146,7 @@ expect(s.income).toBe(1000); expect(s.transfers).toBe(300); expect(s.invested).t
 const items = [{ merchant: "ZOMATO" }, { merchant: "zomato" }, { merchant: "Zomato" }, { merchant: "zomato" }];
 applyCanonicalMerchants(items);
 expect(items.map((i) => i.merchant)).toEqual(["Zomato", "Zomato", "Zomato", "Zomato"]);
-expect(parseLoc("[Home](https://maps.apple.com/?ll=12.97,77.59)")).toEqual({ lat: 12.97, lng: 77.59, label: "Home" });
+expect(parseLoc("[Sample Place](https://maps.apple.com/?ll=12.97,77.59)")).toEqual({ lat: 12.97, lng: 77.59, label: "Sample Place" });
 expect(locParts("[, Pune, MH](https://x)")).toEqual({ label: "Pune, MH", url: "https://x" });
 ```
 

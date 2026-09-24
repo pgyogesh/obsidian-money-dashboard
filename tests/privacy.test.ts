@@ -25,6 +25,10 @@ describe("privacy", () => {
     expect(hits).toEqual([]);
   });
 
+  it("publishes no editor swap or backup files", () => {
+    expect(files.filter((f) => /\.sw[a-p]$|~$|\.bak$/.test(f))).toEqual([]);
+  });
+
   it("has no em-dash in any published file", () => {
     const hits = files.filter((f) => readFileSync(f, "utf8").includes(EM_DASH));
     expect(hits).toEqual([]);
