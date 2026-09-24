@@ -62,7 +62,6 @@ export class MoneySettingTab extends PluginSettingTab {
     const save = () => this.plugin.saveSettings();
     containerEl.empty();
 
-    new Setting(containerEl).setName("Money").setHeading();
     new Setting(containerEl)
       .setName("Currency symbol")
       .setDesc("Shown before every amount.")
