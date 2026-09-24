@@ -55,17 +55,57 @@ While a month is still in the inbox, you can set **Category** from a dropdown, a
 
 ## Capture from SMS on iPhone
 
-An Apple Shortcut can add a row to the inbox for every bank SMS, using a language model to turn the message into a row.
+Two Apple Shortcuts turn a bank SMS into an inbox row. A language model reads the message and writes the row, so you do not type anything.
 
-**[Get the Apple Shortcut](APPLE_SHORTCUT_LINK)**
+| Shortcut | What it does | Link |
+| --- | --- | --- |
+| Log Transaction | Runs from an automation when a bank SMS arrives | [Get Log Transaction](https://www.icloud.com/shortcuts/79baf4ed0a5743e7b50a9dbcae2be478) |
+| Log Transaction from Share Sheet | Share an SMS to it by hand, for a message the automation missed | [Get Log Transaction from Share Sheet](https://www.icloud.com/shortcuts/24aa567d6f2b43e5a9a9e18415486e7f) |
 
-The prompt the Shortcut uses is in [docs/shortcut-prompt.md](docs/shortcut-prompt.md). Copy it into a note in your vault, replace the placeholders with your own accounts, and point the Shortcut's **Get file** action at that note.
+### What you need
 
-Settings in the Shortcut that matter:
+- An iPhone with Apple Intelligence. **Log Transaction** uses the Apple Intelligence model.
+- **Log Transaction from Share Sheet** uses the ChatGPT extension of Apple Intelligence. Turn it on in **Settings → Apple Intelligence & Siri → ChatGPT**, or change the model in the shortcut's **Use Model** action.
+- Your vault in iCloud Drive, so the phone can write to the inbox.
+
+### Set up the shortcuts
+
+1. Open each link and add the shortcut.
+2. Copy the prompt from [docs/shortcut-prompt.md](docs/shortcut-prompt.md) into a note in your vault, for example `ExpensePrompt.md`. Replace every `<...>` placeholder with your own name, accounts and merchant spellings.
+3. In each shortcut, point the two file actions at your own files:
+   - **Get File**: your prompt note, `ExpensePrompt.md`.
+   - **Append to Text File**: your inbox, `Expenses.md`.
+
+   The shared shortcuts still point at the author's folder, so this step is needed.
+4. In **Append to Text File**, check that **Make New Line** is **on**. When it is off, two rows can join onto one line and both are lost.
+5. In **Log Transaction**, the first **Use Model** action asks whether the message is a transaction. It also names a mobile operator whose messages should be ignored. Change that name to your own operator, or remove it.
+
+### Create the automations
+
+**Log Transaction** runs from Personal Automations in the Shortcuts app. Create one automation for each word your bank uses in its SMS:
+
+1. Open **Shortcuts → Automation**, and tap **+**.
+2. Choose **Message**. Under **Message Contains**, enter the word, for example `debited`.
+3. Choose **Run Immediately**, so the shortcut runs without asking.
+4. Tap **Next**, and choose **Log Transaction**.
+
+Repeat for each word:
+
+| Message contains | Catches |
+| --- | --- |
+| `debited` | Money out |
+| `credited` | Money in, and card refunds |
+| `deposited` | Money in, from banks that say "deposited" |
+
+Add a word for any other phrase your bank uses, for example `spent` or `withdrawn`.
+
+When an automation misses a message, open the SMS, share it, and choose **Log Transaction from Share Sheet**.
+
+### Settings in the shortcut that matter
 
 | Setting | Value | Why |
 | --- | --- | --- |
-| Append to file, **Make New Line** | On | Off lets two rows join onto one line, and both are lost |
+| Append to Text File, **Make New Line** | On | Off lets two rows join onto one line, and both are lost |
 | The `If` condition | `Response` **is** `Yes` | A bare `If Response` also passes a `No` |
 | Format Date | `yyyy-MM-dd HH:mm` | This is the `When` value |
 
