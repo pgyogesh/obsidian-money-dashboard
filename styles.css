@@ -851,7 +851,7 @@ body.theme-dark {
 .markdown-source-view.money-map .cm-sizer { padding-top: 0 !important; }
 /* The dataviewjs wrapper can carry its own margin, which would reappear as a
    gutter the moment the container padding is gone. */
-.money-map .block-language-dataviewjs { margin: 0; padding: 0; }
+.money-map .block-language-money-map { margin: 0; padding: 0; }
 
 /* The note's own title would be "something above the map", so it goes too. */
 .money-map .inline-title { display: none; }
@@ -1413,7 +1413,7 @@ body.is-phone .money-dashboard td.is-loc { max-width: 96px; font-size: 11px; }
    Values that change per element are passed as CSS custom properties rather
    than inline styles. These rules consume them.
    ============================================================================ */
-body .money-dashboard .is-hidden { display: none !important; }
+.md-block .is-hidden { display: none !important; }
 body .money-dashboard .wd-money-titlerow { display: flex; align-items: center; gap: 9px; }
 body .money-dashboard .wd-money-subhead { margin-top: 14px; }
 body .money-dashboard .wd-money-empty-sub { margin-top: 8px; }
