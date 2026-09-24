@@ -1,6 +1,11 @@
-# Archive completed months: design
+# Archive completed months, and add expenses by hand: design
 
 Status: **draft, waiting for review.** Date: 2026-09-24.
+
+This spec covers two features that both write into the money notes:
+
+1. [Archive completed months](#goal), below.
+2. [Add expenses by hand](#feature-2-add-expenses-by-hand), at the end.
 
 ## TL;DR
 
@@ -8,6 +13,7 @@ Status: **draft, waiting for review.** Date: 2026-09-24.
 - A preview window shows what will happen. Nothing is written until the user presses **Archive**.
 - The plugin writes only the table between the `txns` markers and the `money:` frontmatter block. Everything else in the month note is kept.
 - The inbox is backed up first, and archived rows leave the inbox only after every month note is written.
+- A second command, **Add expense**, opens a form and appends one row to the inbox.
 
 ## Goal
 
@@ -162,3 +168,89 @@ The figures come from `summarise`, so the note, the dashboard and the drift chec
 - Automatic archiving.
 - Reading the Periodic Notes plugin's settings.
 - Undo. The backup file is the way back.
+
+---
+
+## Feature 2: Add expenses by hand
+
+### Goal
+
+A user can record a cash payment, or any transaction the Shortcut missed, without editing the inbox table by hand.
+
+Success means:
+
+1. A saved row is read back by `parseInbox` with every field the user entered.
+2. The row lands in the inbox's own column order, whatever that order is.
+3. A row the Shortcut appends at the same moment is never lost.
+
+### Decisions
+
+| Item | Decision | Source |
+| --- | --- | --- |
+| Where a row goes | Always the inbox, whatever its date | User |
+| Row in an already-archived month | Goes to the inbox. The form warns that it counts only after the next archive run, which merges it in. | User |
+| `Ref` when left empty | `MANUAL-YYYYMMDDHHmmss`, so two genuine identical purchases are never merged as duplicates | User |
+
+### Opening the form
+
+- The command **Money Dashboard: Add expense**.
+- A **＋** button in the Money Dashboard header, next to the month switcher.
+
+### Fields
+
+| Field | Input | Default |
+| --- | --- | --- |
+| When | Date and time | Now |
+| Amount | Number, more than 0 | none |
+| Direction | `debit` or `credit` | `debit` |
+| Merchant | Text, suggesting merchants already used | none |
+| Category | Dropdown from the category setting, or empty | empty |
+| Account | Dropdown from the accounts config; free text when there is no config | The account used last |
+| Method | `upi`, `credit_card`, `debit_card`, `neft`, `imps`, `netbanking`, `atm`, `fastag`, `cash` | The method used last |
+| Description | Text | empty |
+| Ref | Text | `MANUAL-YYYYMMDDHHmmss` of the save time, when left empty |
+| Location | Text | empty |
+
+"Used last" is kept in the plugin settings, so it survives a restart.
+
+### Checks before saving
+
+| Check | Result |
+| --- | --- |
+| `When` is a valid date | Required |
+| `Amount` is a number more than 0 | Required |
+| `Merchant` is not empty | Required |
+| No inbox found | Refuse, and point to the setup command |
+| The month already has a month note | Warn: "This month is archived. The row will count after you archive again." |
+| The date is after now | Warn: "This date is in the future." |
+
+A warning does not block saving.
+
+### Saving
+
+1. Find the inbox with `findInbox`.
+2. Read the header row under the inbox marker. Build the row with one cell per header column, in the header's order. A column the form does not fill is left empty. A form field with no column in the header is dropped. With no header, use the legacy order `When, Amount, Direction, Merchant, Category, Account, Method, Ref, Raw`.
+3. Write `When` as `YYYY-MM-DD HH:mm` and `Amount` as a plain number with two decimals. Put `manual entry` in `Raw` when the header has it. Pass every cell through `cleanFreeText`.
+4. Append the row in one `vault.process` call, adding a line break first when the file does not end with one.
+5. Show a notice. Open dashboards redraw through their normal file watch.
+
+### Code layout
+
+| File | Job |
+| --- | --- |
+| `src/entry/row.ts` | Pure. Validates the fields, and builds the row text from the header and the fields. |
+| `src/entry/modal.ts` | The form. |
+
+### Testing
+
+| What | How |
+| --- | --- |
+| Row built in header order, including a reordered header and a legacy header-less table | vitest on `row.ts` |
+| A built row read back by `parseInbox` gives the same fields | vitest |
+| Validation messages | vitest |
+| Generated Ref when empty | vitest |
+| Append keeps a row added in the meantime, and adds a missing final line break | vitest on the append function |
+
+### Also in this change
+
+- The dashboard banner for leftover inbox rows in an archived month gets the **Archive** button too, because a manual row in an archived month produces that banner.
