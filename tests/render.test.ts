@@ -1,7 +1,6 @@
 // @vitest-environment jsdom
 import moment from "moment";
 import { beforeAll, describe, expect, it } from "vitest";
-import { TFile } from "obsidian";
 import { makeFormat } from "../src/parse/format";
 import { renderAccounts } from "../src/render/accounts";
 import type { RenderCtx } from "../src/render/common";
@@ -10,27 +9,13 @@ import { renderMap } from "../src/render/map";
 import { DEFAULT_SETTINGS } from "../src/settings";
 import { planSetup } from "../src/setup";
 import { installDomHelpers } from "./dom";
+import { fakeApp as makeFakeApp } from "./fakeApp";
 
+// The sample July note is marked as sample data in its own frontmatter.
 const fakeApp = (files: Record<string, string>) => {
-  const store = { ...files };
-  const tfiles = () => Object.keys(store).map((p) => new TFile(p));
-  const opened: string[] = [];
-  const app = {
-    vault: {
-      getMarkdownFiles: tfiles,
-      cachedRead: async (f: TFile) => store[f.path],
-      getAbstractFileByPath: (p: string) => (store[p] != null ? new TFile(p) : null),
-      process: async (f: TFile, fn: (d: string) => string) => { store[f.path] = fn(store[f.path]); return store[f.path]; },
-    },
-    metadataCache: {
-      getFileCache: (f: TFile) => {
-        const m = /^---\n([\s\S]*?)\n---/.exec(store[f.path] ?? "");
-        return m && /status: sample/.test(m[1]) ? { frontmatter: { money: { status: "sample" } } } : null;
-      },
-    },
-    workspace: { openLinkText: async (p: string) => { opened.push(p); } },
-  };
-  return { app, store, opened };
+  const f = makeFakeApp(files);
+  for (const p of Object.keys(files)) if (/status: sample/.test(files[p])) f.fm[p] = { money: { status: "sample" } };
+  return f;
 };
 
 const ctxFor = (app: unknown, redraw: () => Promise<void> = async () => {}): RenderCtx => ({
