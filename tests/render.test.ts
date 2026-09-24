@@ -99,6 +99,22 @@ describe("renderAccounts", () => {
   });
 });
 
+describe("renderAccounts, account case", () => {
+  it("counts rows whose Account differs from the config only in case", async () => {
+    const files = sample();
+    files["Money/Expenses.md"] = files["Money/Expenses.md"].replace(/\| Travel Card \|/g, "| travel card |");
+    const { app } = fakeApp(files);
+    const el = document.createElement("div");
+    await renderAccounts(ctxFor(app), el);
+    const card = [...el.querySelectorAll(".wd-grid")[0].querySelectorAll(".wd-card")]
+      .find((c) => c.querySelector(".wd-label")!.textContent === "Travel Card")!;
+    // Sample rows fall on days 3 to 7, so they sit in the current cycle up to
+    // the 18th and in the last bill after it.
+    const counted = card.querySelector(".wd-value")!.textContent !== "₹0" || /Last bill/.test(card.textContent ?? "");
+    expect(counted).toBe(true);
+  });
+});
+
 describe("renderMap", () => {
   it("draws the map shell and the places table", async () => {
     const { app } = fakeApp(sample());

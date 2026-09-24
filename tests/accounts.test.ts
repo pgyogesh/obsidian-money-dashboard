@@ -1,6 +1,6 @@
 import moment from "moment";
 import { describe, expect, it } from "vitest";
-import { cycleFor, dueFor, inCycle, parseAccounts } from "../src/parse/accounts";
+import { cycleFor, dueFor, inCycle, parseAccounts, sameAccount } from "../src/parse/accounts";
 import { ACCT_END, ACCT_START } from "../src/parse/markers";
 
 const a = { name: "Card", statementDay: 18, dueDay: 7, limit: null, note: "" };
@@ -75,5 +75,12 @@ describe("parseAccounts", () => {
   });
   it("returns nothing when the markers are only quoted", () => {
     expect(parseAccounts(`const s = "${ACCT_START}";`)).toEqual([]);
+  });
+});
+
+describe("sameAccount", () => {
+  it("matches names without case or extra spaces", () => {
+    expect(sameAccount("hdfc  card", "HDFC Card")).toBe(true);
+    expect(sameAccount("HDFC Card", "HDFC Card 2")).toBe(false);
   });
 });

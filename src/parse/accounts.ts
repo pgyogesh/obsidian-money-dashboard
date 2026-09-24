@@ -82,3 +82,7 @@ export const dueFor = (acct: Account, cycle: Cycle): Moment | null => {
 
 export const inCycle = (t: { moment: Moment }, c: Cycle): boolean =>
   t.moment.isValid() && !t.moment.isBefore(c.start) && !t.moment.isAfter(c.end);
+
+/** Account names are typed by hand and by a model, so compare them loosely. */
+export const sameAccount = (a: string, b: string): boolean =>
+  String(a ?? "").trim().replace(/\s+/g, " ").toLowerCase() === String(b ?? "").trim().replace(/\s+/g, " ").toLowerCase();

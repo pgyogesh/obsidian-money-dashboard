@@ -1,5 +1,5 @@
 import { moment, Platform } from "obsidian";
-import { cycleFor, dueFor, inCycle, type Account } from "../parse/accounts";
+import { cycleFor, dueFor, inCycle, sameAccount, type Account } from "../parse/accounts";
 import { ACCT_START, DATE_FMTS } from "../parse/markers";
 import { summarise } from "../parse/summary";
 import type { Ranked } from "../parse/types";
@@ -34,7 +34,7 @@ export const renderAccounts = async (ctx: RenderCtx, el: HTMLElement): Promise<v
   const small = Platform.isMobile;
   const forAcct = (acct: Account, offset: number) => {
     const cyc = cycleFor(acct, offset, NOW);
-    return { cyc, rows: pool.filter((t) => t.card === acct.name && inCycle(t, cyc)) };
+    return { cyc, rows: pool.filter((t) => sameAccount(t.card, acct.name) && inCycle(t, cyc)) };
   };
   const merchantRank = (rows: PoolTxn[]): Ranked => {
     const m = new Map<string, number>();
@@ -61,8 +61,8 @@ export const renderAccounts = async (ctx: RenderCtx, el: HTMLElement): Promise<v
 
     // An account in the data but missing from the config would vanish from
     // this page, so it is named instead.
-    const known = new Set(accounts.map((a) => a.name.toLowerCase()));
-    const strays = [...new Set(pool.map((t) => t.card).filter((n) => n && n !== "Unknown" && !known.has(n.toLowerCase())))];
+    const strays = [...new Set(pool.map((t) => t.card)
+      .filter((n) => n && n !== "Unknown" && !accounts.some((a) => sameAccount(a.name, n))))];
     if (strays.length) {
       root.createDiv({ cls: "wd-money-warn", text: `Not in the config, so not shown below: ${strays.join(", ")}. Add them to the table in ${cfgFile.basename}, or fix the Account cell in the inbox.` });
     }
