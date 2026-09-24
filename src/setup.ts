@@ -124,25 +124,38 @@ ${TXN_END}
 `;
 };
 
+/** What the vault already holds, wherever it is. */
+export interface Found {
+  inbox: boolean;
+  accounts: boolean;
+  /** YYYY-MM of every month note already in the vault. */
+  monthKeys: Set<string>;
+}
+
+const NOTHING: Found = { inbox: false, accounts: false, monthKeys: new Set() };
+
 /**
  * The notes the setup command would create in `folder`, leaving out any path
- * in `existing`. It never overwrites.
+ * in `existing`. It never overwrites. It also skips the inbox and the config
+ * when the vault already has them in another folder, because a second, empty
+ * inbox would win the search and hide the real one. A sample month is never
+ * added next to a real archive of the same month.
  */
-export const planSetup = (folder: string, existing: Set<string>, now: Moment, sample: boolean): PlannedFile[] => {
+export const planSetup = (folder: string, existing: Set<string>, now: Moment, sample: boolean, found: Found = NOTHING): PlannedFile[] => {
   const at = (name: string) => (folder ? `${folder.replace(/\/+$/, "")}/${name}` : name);
   // Sample rows never land after today, so none of them is in the future.
   const rows = sample
     ? SAMPLES.map((s, i) => inboxRow({ ...s, day: Math.min(s.day, now.date()) }, now, i))
     : [];
   const files: PlannedFile[] = [
-    { path: at("Expenses.md"), content: inboxNote(rows) },
-    { path: at("Money Accounts Config.md"), content: configNote },
+    ...(found.inbox ? [] : [{ path: at("Expenses.md"), content: inboxNote(rows) }]),
+    ...(found.accounts ? [] : [{ path: at("Money Accounts Config.md"), content: configNote }]),
     { path: at("Money Dashboard.md"), content: page("money-dashboard", "money-dashboard") },
     { path: at("Money Accounts.md"), content: page("money-accounts", "money-accounts") },
     { path: at("Money Map.md"), content: page("money-map", "money-map") },
   ];
-  if (sample) {
-    const prev = now.clone().subtract(1, "month").startOf("month");
+  const prev = now.clone().subtract(1, "month").startOf("month");
+  if (sample && !found.monthKeys.has(prev.format("YYYY-MM"))) {
     files.push({ path: at(`${prev.format(MONTH_FMT)}.md`), content: monthNote(prev) });
   }
   return files.filter((f) => !existing.has(f.path));

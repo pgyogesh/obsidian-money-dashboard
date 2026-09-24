@@ -47,3 +47,17 @@ describe("planSetup", () => {
     expect((await findAccounts(v))!.file.path).toBe("Money/Money Accounts Config.md");
   });
 });
+
+describe("planSetup with an existing vault", () => {
+  it("skips the inbox and the config when the vault already has them elsewhere", () => {
+    const all = planSetup("Money", new Set(), NOW, true, { inbox: true, accounts: true, monthKeys: new Set() });
+    const paths = all.map((f) => f.path);
+    expect(paths).not.toContain("Money/Expenses.md");
+    expect(paths).not.toContain("Money/Money Accounts Config.md");
+    expect(paths).toContain("Money/Money Dashboard.md");
+  });
+  it("adds no sample rows or sample month next to real data", () => {
+    const all = planSetup("Money", new Set(), NOW, true, { inbox: false, accounts: false, monthKeys: new Set(["2026-07"]) });
+    expect(all.map((f) => f.path)).not.toContain("Money/2026 - 07-July.md");
+  });
+});

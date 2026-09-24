@@ -7,6 +7,8 @@ import { renderDashboard } from "./render/dashboard";
 import { renderMap } from "./render/map";
 import { DEFAULT_SETTINGS, MoneySettingTab, type MoneySettings } from "./settings";
 import { planSetup } from "./setup";
+import { findAccounts, findInbox } from "./vault/load";
+import { obsidianVault } from "./vault/obsidian";
 
 type Renderer = (ctx: RenderCtx, el: HTMLElement) => Promise<void>;
 
@@ -154,12 +156,22 @@ export default class MoneyDashboardPlugin extends Plugin {
   private async setUp(sample: boolean): Promise<void> {
     const folder = normalizePath(this.settings.setupFolder || "/").replace(/^\/$/, "");
     const existing = new Set(this.app.vault.getFiles().map((f) => f.path));
-    const plan = planSetup(folder, existing, moment(), sample);
+    const v = obsidianVault(this.app);
+    const [inbox, accounts] = await Promise.all([findInbox(v), findAccounts(v)]);
+    const monthKeys = new Set(this.app.vault.getMarkdownFiles()
+      .map((f) => moment(f.basename, MONTH_FMT, true)).filter((m) => m.isValid()).map((m) => m.format("YYYY-MM")));
+    const plan = planSetup(folder, existing, moment(), sample, { inbox: !!inbox, accounts: !!accounts, monthKeys });
     if (!plan.length) { new Notice("Money Dashboard: every note already exists. Nothing was changed."); return; }
-    if (folder && !this.app.vault.getAbstractFileByPath(folder)) await this.app.vault.createFolder(folder);
-    for (const f of plan) await this.app.vault.create(f.path, f.content);
-    const skipped = 5 + (sample ? 1 : 0) - plan.length;
-    new Notice(`Money Dashboard: created ${plan.length} note${plan.length === 1 ? "" : "s"}${skipped ? `, kept ${skipped} that already existed` : ""}.`);
+    const created: string[] = [];
+    try {
+      if (folder && !this.app.vault.getAbstractFileByPath(folder)) await this.app.vault.createFolder(folder);
+      for (const f of plan) { await this.app.vault.create(f.path, f.content); created.push(f.path); }
+    } catch (e) {
+      new Notice(`Money Dashboard: setup stopped after ${created.length} note(s): ${(e as Error).message}`, 10000);
+      return;
+    }
+    const kept = [inbox && `your inbox (${inbox.file.path})`, accounts && `your account config (${accounts.file.path})`].filter(Boolean);
+    new Notice(`Money Dashboard: created ${created.length} note${created.length === 1 ? "" : "s"}.${kept.length ? ` Kept ${kept.join(" and ")}.` : ""}`, 8000);
     const dash = plan.find((f) => f.path.endsWith("Money Dashboard.md"));
     if (dash) await this.app.workspace.openLinkText(dash.path, "", false);
   }
