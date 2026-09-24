@@ -1,6 +1,7 @@
 import { moment } from "obsidian";
 import { DATE_FMTS, INBOX_MARK, MONTH_FMT, TXN_START } from "../parse/markers";
 import { categoryKind } from "../parse/summary";
+import { cellIndexFor } from "../parse/inbox";
 import type { InboxRow, Txn } from "../parse/types";
 import { cleanFreeText } from "../write/cell";
 import { loadMonths, type MonthData } from "../vault/load";
@@ -97,9 +98,11 @@ export const renderDashboard = async (ctx: RenderCtx, el: HTMLElement): Promise<
 
     // --- Editing (live month only) ------------------------------------------
     const failed = (what: string, why: string) => warn(`Could not ${what}: ${why}`);
-    const write = async (row: InboxRow, col: number | undefined, fallback: number, value: string, what: string) => {
+    const write = async (row: InboxRow, kind: "category" | "merchant" | "description", value: string, what: string) => {
       if (!inboxPath) { failed(what, "the inbox file is not available"); return false; }
-      const res = await writeCell(app, inboxPath, row, col ?? fallback, value);
+      const col = cellIndexFor(row, kind);
+      if (col == null) { failed(what, `the inbox table has no ${kind[0].toUpperCase()}${kind.slice(1)} column. Add one to its header row.`); return false; }
+      const res = await writeCell(app, inboxPath, row, col, cleanFreeText(value));
       if (!res.ok) { failed(what, res.why); return false; }
       await ctx.refresh();
       return true;
@@ -116,7 +119,7 @@ export const renderDashboard = async (ctx: RenderCtx, el: HTMLElement): Promise<
       s.onchange = async () => {
         if (!s.value) return;
         s.disabled = true;
-        if (!(await write(row, row.catCol, 4, s.value, "set the category"))) { s.disabled = false; s.value = ""; }
+        if (!(await write(row, "category", s.value, "set the category"))) { s.disabled = false; s.value = ""; }
       };
     };
 
@@ -135,7 +138,7 @@ export const renderDashboard = async (ctx: RenderCtx, el: HTMLElement): Promise<
         if (saving || value === (row.description ?? "").trim()) return;
         saving = true;
         box.disabled = true;
-        if (!(await write(row, row.descCol, 10, value, "set the description"))) {
+        if (!(await write(row, "description", value, "set the description"))) {
           box.disabled = false; saving = false; box.value = row.description ?? "";
         }
       };
@@ -195,8 +198,8 @@ export const renderDashboard = async (ctx: RenderCtx, el: HTMLElement): Promise<
           if (!save || value === String(fileValue).trim()) { paint(); return; }
           box.disabled = true;
           const ok = kind === "merchant"
-            ? await write(src, src.merCol, 3, value, "save the merchant")
-            : await write(src, src.descCol, 10, value, "save the description");
+            ? await write(src, "merchant", value, "save the merchant")
+            : await write(src, "description", value, "save the description");
           if (!ok) paint();
         };
         box.onblur = () => finish(true);

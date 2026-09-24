@@ -77,3 +77,13 @@ export const inboxToTxn = (r: InboxRow): Txn => ({
   location: r.location ?? "",
   src: r,
 });
+
+/**
+ * Which cell of a row holds `kind`, taken from the header the row was parsed
+ * with, or from the legacy layout when the table has no header. Null when
+ * the table has no such column: guessing a position could overwrite Raw.
+ */
+export const cellIndexFor = (r: InboxRow, kind: "category" | "merchant" | "description"): number | null => {
+  const at = kind === "category" ? r.catCol : kind === "merchant" ? r.merCol : r.descCol;
+  return at ?? null;
+};

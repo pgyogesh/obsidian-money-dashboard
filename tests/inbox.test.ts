@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { hasInboxTable, inboxToTxn, parseInbox } from "../src/parse/inbox";
+import { cellIndexFor, hasInboxTable, inboxToTxn, parseInbox } from "../src/parse/inbox";
 import { INBOX_MARK } from "../src/parse/markers";
 
 const inbox = [
@@ -61,5 +61,23 @@ describe("hasInboxTable", () => {
   it("ignores a note that only quotes the marker", () => {
     expect(hasInboxTable(`const x = "${INBOX_MARK}";`)).toBe(false);
     expect(hasInboxTable(inbox)).toBe(true);
+  });
+});
+
+describe("cellIndexFor", () => {
+  it("uses the header's own column", () => {
+    const r = parseInbox(inbox)[0];
+    expect(cellIndexFor(r, "category")).toBe(4);
+    expect(cellIndexFor(r, "merchant")).toBe(3);
+  });
+  it("refuses a column the header does not have, rather than guess a position", () => {
+    const r = parseInbox(inbox)[0];
+    expect(cellIndexFor(r, "description")).toBeNull();
+  });
+  it("uses the legacy position only when there is no header", () => {
+    const legacy = `${INBOX_MARK}\n| 2026-08-15 | 10 | debit | M | Groceries | A | upi | 1 | raw |`;
+    const r = parseInbox(legacy)[0];
+    expect(cellIndexFor(r, "category")).toBe(4);
+    expect(cellIndexFor(r, "description")).toBeNull();
   });
 });
