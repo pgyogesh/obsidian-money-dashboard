@@ -18,7 +18,7 @@ import {
 export const renderDashboard = async (ctx: RenderCtx, el: HTMLElement): Promise<void> => {
   const { app, settings, fmt, cats } = ctx;
   const now = moment();
-  const { months, overlaps, inbox } = await loadMonths(obsidianVault(app), cats, now);
+  const { months, overlaps, duplicates, inbox } = await loadMonths(obsidianVault(app), cats, now);
   const byKey = new Map(months.map((m) => [m.key, m]));
   ctx.watch(inbox?.path);
   const root = el.createDiv({ cls: "wd-money-root" });
@@ -83,6 +83,10 @@ export const renderDashboard = async (ctx: RenderCtx, el: HTMLElement): Promise<
       warn(clash.winner === "inbox"
         ? `${clash.label} is in both the inbox and an archived note. It is the current month, so the inbox is shown and the archived note is ignored.`
         : `${clash.label} is archived, but rows for it are still in the inbox. The archive is shown. Remove the leftover rows from the inbox.`);
+    }
+    const dup = duplicates.find((d) => d.key === sel.key);
+    if (dup) {
+      warn(`${sel.label} has ${dup.paths.length} month notes: ${dup.paths.join(", ")}. Only ${dup.used} is counted. Merge or delete the others.`);
     }
     if (sel.status === "unarchived") {
       warn(`${sel.label} has ended but is still in the inbox. Move its rows into a note named "${sel.moment.format(MONTH_FMT)}".`);

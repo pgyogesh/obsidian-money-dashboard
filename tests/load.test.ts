@@ -102,3 +102,19 @@ describe("loadPool", () => {
     expect(pool.every((t) => t.moment.isValid())).toBe(true);
   });
 });
+
+describe("duplicate month notes", () => {
+  const dup = {
+    ...files,
+    "copy/2026 - 07-July.md": month(["| 2026-07-10 | Zomato | Dining & Delivery | Card A | credit_card | 200 | |"]),
+  };
+  it("counts a month once when two notes share its name, and reports it", async () => {
+    const res = await loadMonths(fakeVault(dup, fm), CATS, moment("2026-08-20"));
+    expect(res.months.find((m) => m.key === "2026-07")!.net).toBe(200);
+    expect(res.duplicates).toEqual([{ key: "2026-07", paths: ["copy/2026 - 07-July.md", "z/2026 - 07-July.md"], used: "z/2026 - 07-July.md" }]);
+  });
+  it("keeps the pool free of the duplicate too", async () => {
+    const pool = await loadPool(fakeVault(dup, fm), moment("2026-08-20"));
+    expect(pool.filter((t) => t.date.startsWith("2026-07")).length).toBe(1);
+  });
+});

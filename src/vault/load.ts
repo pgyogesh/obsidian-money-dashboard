@@ -36,6 +36,16 @@ export const findAccounts = async (v: VaultLike): Promise<{ file: FileLike; acco
   return null;
 };
 
+const groupByKey = <T>(items: T[], key: (t: T) => string) => {
+  const m = new Map<string, T[]>();
+  for (const it of items) {
+    const k = key(it);
+    if (!m.has(k)) m.set(k, []);
+    m.get(k)!.push(it);
+  }
+  return m;
+};
+
 interface Archived {
   file: FileLike;
   m: Moment;
@@ -43,9 +53,20 @@ interface Archived {
   txns: Txn[] | null;
 }
 
-/** Month notes are named "YYYY - MM-MMMM" and carry money frontmatter or a table. */
-const findArchived = async (v: VaultLike, inbox: FileLike | null): Promise<Archived[]> => {
-  const out: Archived[] = [];
+export interface Duplicate {
+  key: string;
+  paths: string[];
+  used: string;
+}
+
+/**
+ * Month notes are named "YYYY - MM-MMMM" and carry money frontmatter or a
+ * table. Two notes with the same name in different folders would count the
+ * month twice, so only one is used: the one with a table, then the shorter
+ * path. The others are reported.
+ */
+const findArchived = async (v: VaultLike, inbox: FileLike | null): Promise<{ archived: Archived[]; duplicates: Duplicate[] }> => {
+  const all: Archived[] = [];
   for (const file of v.files()) {
     if (inbox && file.path === inbox.path) continue;
     const m = moment(file.basename, MONTH_FMT, true);
@@ -54,9 +75,23 @@ const findArchived = async (v: VaultLike, inbox: FileLike | null): Promise<Archi
     const money = fm && typeof fm.money === "object" && fm.money ? fm.money as Record<string, unknown> : null;
     const txns = parseMonthTxns(await v.read(file));
     if (!money && !txns) continue; // an ordinary monthly note
-    out.push({ file, m, money, txns });
+    all.push({ file, m, money, txns });
   }
-  return out;
+  const byKey = groupByKey(all, (a) => a.m.format("YYYY-MM"));
+  const archived: Archived[] = [];
+  const duplicates: Duplicate[] = [];
+  for (const [key, group] of byKey) {
+    const ranked = group.slice().sort((a, b) =>
+      Number(!!b.txns?.length) - Number(!!a.txns?.length)
+      || a.file.path.length - b.file.path.length
+      || a.file.path.localeCompare(b.file.path));
+    archived.push(ranked[0]);
+    if (group.length > 1) {
+      duplicates.push({ key, paths: group.map((g) => g.file.path).sort(), used: ranked[0].file.path });
+    }
+  }
+  duplicates.sort((a, b) => a.key.localeCompare(b.key));
+  return { archived, duplicates };
 };
 
 export interface Overlap {
@@ -82,18 +117,9 @@ export interface MonthData extends Summary {
 export interface LoadedMonths {
   months: MonthData[];
   overlaps: Overlap[];
+  duplicates: Duplicate[];
   inbox: FileLike | null;
 }
-
-const groupByKey = <T>(items: T[], key: (t: T) => string) => {
-  const m = new Map<string, T[]>();
-  for (const it of items) {
-    const k = key(it);
-    if (!m.has(k)) m.set(k, []);
-    m.get(k)!.push(it);
-  }
-  return m;
-};
 
 /**
  * Every month, from both sources, with this precedence:
@@ -106,7 +132,7 @@ const groupByKey = <T>(items: T[], key: (t: T) => string) => {
 export const loadMonths = async (v: VaultLike, cats: Categories, now: Moment): Promise<LoadedMonths> => {
   const found = await findInbox(v);
   const inbox = found ? parseInbox(found.text) : [];
-  const archived = await findArchived(v, found?.file ?? null);
+  const { archived, duplicates } = await findArchived(v, found?.file ?? null);
   // Unify merchant spellings across every source before anything is grouped.
   // Only the transactions are relabelled. The inbox rows keep the file's own
   // spelling, because an edit box is seeded from them, and seeding it from the
@@ -156,7 +182,7 @@ export const loadMonths = async (v: VaultLike, cats: Categories, now: Moment): P
   }
   merged.sort((a, b) => a.key.localeCompare(b.key));
   overlaps.sort((a, b) => a.key.localeCompare(b.key));
-  return { months: merged, overlaps, inbox: found?.file ?? null };
+  return { months: merged, overlaps, duplicates, inbox: found?.file ?? null };
 };
 
 export type PoolTxn = Txn & { moment: Moment };
@@ -169,9 +195,11 @@ export type PoolTxn = Txn & { moment: Moment };
 export const loadPool = async (v: VaultLike, now: Moment): Promise<PoolTxn[]> => {
   const found = await findInbox(v);
   const inbox = found ? parseInbox(found.text) : [];
-  const archived = await findArchived(v, found?.file ?? null);
+  const { archived } = await findArchived(v, found?.file ?? null);
   const NOW_KEY = now.format("YYYY-MM");
-  const archivedKeys = new Set(archived.filter((a) => a.txns?.length).map((a) => a.m.format("YYYY-MM")));
+  // Same rule as loadMonths: any archived month, with or without a table,
+  // makes that past month's inbox rows leftovers.
+  const archivedKeys = new Set(archived.map((a) => a.m.format("YYYY-MM")));
   const liveKeys = new Set(inbox.map((r) => r.key));
 
   const pool: Txn[] = [];
