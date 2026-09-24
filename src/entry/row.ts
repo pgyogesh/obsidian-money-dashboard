@@ -41,7 +41,18 @@ export const validateEntry = (f: EntryFields, now: Moment, archivedKeys: Set<str
   return { errors, warnings };
 };
 
-export const defaultRef = (now: Moment) => `MANUAL-${now.format("YYYYMMDDHHmmss")}`;
+/** Down to the millisecond, so two saves in one second never share a Ref. */
+export const defaultRef = (now: Moment) => `MANUAL-${now.format("YYYYMMDDHHmmssSSS")}`;
+
+/** Wrap an async action so a second call while the first runs does nothing. */
+export const singleFlight = (fn: () => Promise<void>): (() => Promise<void>) => {
+  let running = false;
+  return async () => {
+    if (running) return;
+    running = true;
+    try { await fn(); } finally { running = false; }
+  };
+};
 
 /** The header row under the inbox marker, or null when the table has none. */
 export const inboxHeader = (text: string): string[] | null => {

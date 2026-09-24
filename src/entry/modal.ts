@@ -5,7 +5,7 @@ import type { MoneySettings } from "../settings";
 import { findAccounts, findInbox, loadPool } from "../vault/load";
 import { obsidianVault } from "../vault/obsidian";
 import { METHOD_LABEL } from "../render/common";
-import { METHODS, validateEntry, type EntryFields } from "./row";
+import { METHODS, singleFlight, validateEntry, type EntryFields } from "./row";
 import { saveEntry } from "./save";
 
 /** The add-expense form. It appends one row to the inbox. */
@@ -94,8 +94,9 @@ export class EntryModal extends Modal {
     const row = c.createDiv({ cls: "md-modal-buttons" });
     row.createEl("button", { text: "Cancel" }).onclick = () => this.close();
     this.saveBtn = row.createEl("button", { cls: "mod-cta", text: "Add" });
-    this.saveBtn.onclick = () => this.save();
-    this.scope.register(["Mod"], "Enter", () => { void this.save(); return false; });
+    const save = singleFlight(() => this.save());
+    this.saveBtn.onclick = () => { void save(); };
+    this.scope.register(["Mod"], "Enter", () => { void save(); return false; });
     this.check();
   }
 
@@ -121,7 +122,7 @@ export class EntryModal extends Modal {
       this.saveBtn.disabled = false;
       return;
     }
-    await this.onSaved(this.f);
+    try { await this.onSaved(this.f); } catch (e) { console.error("Money Dashboard: could not remember the account and method", e); }
     new Notice(`Money Dashboard: added ${this.f.merchant} to ${res.path}.`);
     this.close();
   }

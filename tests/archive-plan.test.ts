@@ -1,6 +1,6 @@
 import moment from "moment";
 import { describe, expect, it } from "vitest";
-import { buildTable, dedupeTxns, monthNotePath, planArchive } from "../src/archive/plan";
+import { buildTable, dedupeTxns, MONTH_HEADER as MONTH_HEAD, monthNotePath, planArchive } from "../src/archive/plan";
 import { INBOX_MARK, TXN_END, TXN_START } from "../src/parse/markers";
 import { parseMonthTxns } from "../src/parse/month";
 import { summarise } from "../src/parse/summary";
@@ -78,12 +78,45 @@ describe("planArchive", () => {
   });
 });
 
+describe("planArchive, review fixes", () => {
+  const monthNote = (body: string) => new Map([["2026-08", { path: "M/2026 - 08-August.md", text: body }]]);
+  it("blocks a month note with a start marker but no end marker", () => {
+    const p = planArchive({ ...base, inboxText: inbox([R.aug1]), notes: monthNote(`# Aug\n${TXN_START}\nmy text`) });
+    expect(p.blocked.join(" ")).toMatch(/M\/2026 - 08-August\.md has a broken money section/);
+  });
+  it("blocks a month note whose end marker comes before its start marker", () => {
+    const p = planArchive({ ...base, inboxText: inbox([R.aug1]), notes: monthNote(`${TXN_END}\n${TXN_START}`) });
+    expect(p.blocked.join(" ")).toMatch(/broken money section/);
+  });
+  it("never treats a legacy Notes value as a Ref, and keeps it in Description", () => {
+    const legacy = [TXN_START,
+      "| Date | Description | Merchant | Category | Card | Type | Amount | Notes |",
+      "| --- | --- | --- | --- | --- | --- | --- | --- |",
+      "| 2026-08-01 | lunch | Cafe | Other | Card A | upi | 10 | office |",
+      "| 2026-08-02 | taxi | Cab | Other | Card A | upi | 20 | office |", TXN_END].join("\n");
+    const p = planArchive({ ...base, inboxText: inbox([R.aug1]), notes: monthNote(legacy) });
+    const aug = p.months[0];
+    expect(aug.dropped).toBe(0);
+    expect(aug.merged).toHaveLength(3);
+    expect(aug.table).toContain("| 2026-08-02 | Cab | office |");
+    expect(aug.table).not.toMatch(/\| office \| \| lunch/);
+  });
+  it("matches a Ref-less duplicate whatever the merchant's case", () => {
+    const note = [TXN_START, MONTH_HEAD, "| --- | --- | --- | --- | --- | --- | ---: | --- | --- | --- |",
+      "| 2026-08-06 | Zomato | | Dining & Delivery | Card A | credit_card | 30.00 | | | sms |", TXN_END].join("\n");
+    const row = "| 2026-08-06 | 30.00 | debit | ZOMATO  | Dining & Delivery | Card A | credit_card | | | | sms |";
+    const p = planArchive({ ...base, inboxText: inbox([row]), notes: monthNote(note) });
+    expect(p.months[0].dropped).toBe(1);
+    expect(p.months[0].summary.net).toBe(30);
+  });
+});
+
 describe("dedupeTxns", () => {
   it("uses Ref when present, else date, amount and merchant", () => {
     const r = dedupeTxns([
-      t({ note: "A", amount: 1 }), t({ note: "A", amount: 2 }),
+      t({ ref: "A", amount: 1 }), t({ ref: "A", amount: 2 }),
       t({ date: "2026-08-01", amount: 5, merchant: "M" }), t({ date: "2026-08-01", amount: 5.0, merchant: "M" }),
-      t({ date: "2026-08-01", amount: 5, merchant: "M", note: "B" }),
+      t({ date: "2026-08-01", amount: 5, merchant: "M", ref: "B" }),
     ]);
     expect(r.kept).toHaveLength(3);
     expect(r.dropped).toBe(2);
@@ -93,8 +126,8 @@ describe("dedupeTxns", () => {
 describe("buildTable", () => {
   it("round-trips through the month parser with the same totals", () => {
     const txns = [
-      t({ date: "2026-08-02 10:00", merchant: "B", category: "Groceries", amount: 40.5, note: "x1", desc: "a | b" }),
-      t({ date: "2026-08-01", merchant: "A", category: "Income", amount: -1000, note: "x2" }),
+      t({ date: "2026-08-02 10:00", merchant: "B", category: "Groceries", amount: 40.5, ref: "x1", desc: "a | b" }),
+      t({ date: "2026-08-01", merchant: "A", category: "Income", amount: -1000, ref: "x2" }),
     ];
     const table = buildTable(txns);
     expect(table.split("\n")[0]).toBe("| Date | Merchant | Description | Category | Card | Type | Amount | Ref | Location | Raw |");

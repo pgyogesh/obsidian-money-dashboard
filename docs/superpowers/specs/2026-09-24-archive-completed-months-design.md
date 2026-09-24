@@ -189,7 +189,7 @@ Success means:
 | --- | --- | --- |
 | Where a row goes | Always the inbox, whatever its date | User |
 | Row in an already-archived month | Goes to the inbox. The form warns that it counts only after the next archive run, which merges it in. | User |
-| `Ref` when left empty | `MANUAL-YYYYMMDDHHmmss`, so two genuine identical purchases are never merged as duplicates | User |
+| `Ref` when left empty | `MANUAL-YYYYMMDDHHmmssSSS`, so two genuine identical purchases are never merged as duplicates | User |
 
 ### Opening the form
 
@@ -208,7 +208,7 @@ Success means:
 | Account | Dropdown from the accounts config; free text when there is no config | The account used last |
 | Method | `upi`, `credit_card`, `debit_card`, `neft`, `imps`, `netbanking`, `atm`, `fastag`, `cash` | The method used last |
 | Description | Text | empty |
-| Ref | Text | `MANUAL-YYYYMMDDHHmmss` of the save time, when left empty |
+| Ref | Text | `MANUAL-YYYYMMDDHHmmssSSS` of the save time, when left empty |
 | Location | Text | empty |
 
 "Used last" is kept in the plugin settings, so it survives a restart.

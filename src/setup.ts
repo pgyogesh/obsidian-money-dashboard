@@ -116,7 +116,7 @@ Sample archived month. Delete this note when you have real data.
 
 ${TXN_START}
 
-| Date | Merchant | Description | Category | Card | Type | Amount | Notes | Location | Raw |
+| Date | Merchant | Description | Category | Card | Type | Amount | Ref | Location | Raw |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
 ${rows.map((r) => r.line).join("\n")}
 

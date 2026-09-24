@@ -1,6 +1,6 @@
 import moment from "moment";
 import { describe, expect, it } from "vitest";
-import { appendRow, buildRow, inboxHeader, validateEntry, type EntryFields } from "../src/entry/row";
+import { appendRow, buildRow, defaultRef, inboxHeader, singleFlight, validateEntry, type EntryFields } from "../src/entry/row";
 import { saveEntry } from "../src/entry/save";
 import { parseInbox } from "../src/parse/inbox";
 import { INBOX_MARK } from "../src/parse/markers";
@@ -29,20 +29,39 @@ describe("validateEntry", () => {
 describe("buildRow", () => {
   it("follows a reordered header, fills a generated Ref and cleans pipes", () => {
     const header = ["Amount", "When", "Merchant", "Direction", "Category", "Account", "Method", "Ref", "Raw", "Description", "Notes"];
-    expect(buildRow(header, f(), NOW)).toBe("| 250.00 | 2026-09-10 12:30 | Corner Shop | debit | Groceries | Everyday Bank | upi | MANUAL-20260910123456 | manual entry | milk / bread |  |");
+    expect(buildRow(header, f(), NOW)).toBe("| 250.00 | 2026-09-10 12:30 | Corner Shop | debit | Groceries | Everyday Bank | upi | MANUAL-20260910123456000 | manual entry | milk / bread |  |");
   });
   it("keeps a Ref the user typed", () => {
     expect(buildRow(["When", "Ref"], f({ ref: "UTR9" }), NOW)).toBe("| 2026-09-10 12:30 | UTR9 |");
   });
   it("uses the legacy order when there is no header", () => {
-    expect(buildRow(null, f(), NOW)).toBe("| 2026-09-10 12:30 | 250.00 | debit | Corner Shop | Groceries | Everyday Bank | upi | MANUAL-20260910123456 | manual entry |");
+    expect(buildRow(null, f(), NOW)).toBe("| 2026-09-10 12:30 | 250.00 | debit | Corner Shop | Groceries | Everyday Bank | upi | MANUAL-20260910123456000 | manual entry |");
   });
   it("is read back by the inbox parser", () => {
     const head = "| When | Amount | Direction | Merchant | Category | Account | Method | Ref | Location | Description | Raw |\n| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |";
     const text = `${INBOX_MARK}\n${head}\n`;
     const row = buildRow(inboxHeader(text), f({ direction: "credit", location: "[P](https://maps.apple.com/?ll=1.5,2.5)" }), NOW);
     const r = parseInbox(appendRow(text, row))[0];
-    expect(r).toMatchObject({ when: "2026-09-10 12:30", amount: 250, direction: "credit", merchant: "Corner Shop", category: "Groceries", account: "Everyday Bank", method: "upi", ref: "MANUAL-20260910123456", description: "milk / bread", raw: "manual entry", location: "[P](https://maps.apple.com/?ll=1.5,2.5)" });
+    expect(r).toMatchObject({ when: "2026-09-10 12:30", amount: 250, direction: "credit", merchant: "Corner Shop", category: "Groceries", account: "Everyday Bank", method: "upi", ref: "MANUAL-20260910123456000", description: "milk / bread", raw: "manual entry", location: "[P](https://maps.apple.com/?ll=1.5,2.5)" });
+  });
+});
+
+describe("defaultRef", () => {
+  it("differs for two saves in the same second", () => {
+    expect(defaultRef(moment("2026-09-10 12:34:56.001"))).not.toBe(defaultRef(moment("2026-09-10 12:34:56.002")));
+  });
+});
+
+describe("singleFlight", () => {
+  it("ignores a second call while the first is still running", async () => {
+    let n = 0;
+    let release!: () => void;
+    const run = singleFlight(() => new Promise<void>((r) => { n++; release = r; }));
+    const a = run(); void run();
+    expect(n).toBe(1);
+    release(); await a;
+    void run();
+    expect(n).toBe(2);
   });
 });
 

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { newMonthNote, removeLines, replaceTable } from "../src/archive/note";
-import { TXN_END, TXN_START } from "../src/parse/markers";
+import { newMonthNote, removeInboxLines, replaceTable } from "../src/archive/note";
+import { INBOX_MARK, TXN_END, TXN_START } from "../src/parse/markers";
 
 const TABLE = "| Date | X |\n| --- | --- |\n| 2026-07-01 | y |";
 
@@ -24,8 +24,9 @@ describe("newMonthNote", () => {
   });
 });
 
-describe("removeLines", () => {
-  it("removes only the named lines, compared trimmed", () => {
-    expect(removeLines("a\n  | x |  \n| y |\n| x |", new Set(["| x |"]))).toBe("a\n| y |");
+describe("removeInboxLines", () => {
+  it("removes only the named lines, compared trimmed, and only below the marker", () => {
+    const text = `| x |\n${INBOX_MARK}\n  | x |  \n| y |\n| x |`;
+    expect(removeInboxLines(text, new Set(["| x |"]))).toBe(`| x |\n${INBOX_MARK}\n| y |`);
   });
 });

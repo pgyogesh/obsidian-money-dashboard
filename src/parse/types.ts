@@ -38,8 +38,10 @@ export interface Txn {
   /** Payment method. */
   type: string;
   amount: number;
-  /** Bank reference, in the inbox. */
+  /** Bank reference, or a legacy Notes value. Searched, never a duplicate key. */
   note: string;
+  /** The bank reference alone. Archiving uses it as the duplicate key. */
+  ref?: string;
   location: string;
   /** The inbox row behind this transaction. Absent for an archived row. */
   src?: InboxRow;

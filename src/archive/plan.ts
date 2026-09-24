@@ -1,7 +1,7 @@
 import { moment } from "obsidian";
 import type { Moment } from "moment";
 import { inboxToTxn, parseInbox } from "../parse/inbox";
-import { INBOX_MARK, MONTH_FMT } from "../parse/markers";
+import { INBOX_MARK, MONTH_FMT, TXN_END, TXN_START } from "../parse/markers";
 import { applyCanonicalMerchants } from "../parse/merchant";
 import { parseMonthTxns } from "../parse/month";
 import { summarise } from "../parse/summary";
@@ -54,7 +54,10 @@ export const dedupeTxns = (txns: Txn[]): { kept: Txn[]; dropped: number } => {
   const seen = new Set<string>();
   const kept: Txn[] = [];
   for (const t of txns) {
-    const k = t.note ? `ref:${t.note}` : `dam:${t.date}|${t.amount.toFixed(2)}|${t.merchant}`;
+    // The merchant is compared loosely: a note may already hold the folded
+    // spelling ("Zomato") of an inbox row that still says "ZOMATO".
+    const merchant = String(t.merchant ?? "").trim().replace(/\s+/g, " ").toLowerCase();
+    const k = t.ref ? `ref:${t.ref}` : `dam:${t.date}|${t.amount.toFixed(2)}|${merchant}`;
     if (seen.has(k)) continue;
     seen.add(k);
     kept.push(t);
@@ -72,7 +75,7 @@ const byDateThenMerchant = (a: Txn, b: Txn) =>
 export const buildTable = (txns: Txn[]): string => {
   const c = (v: unknown) => cleanFreeText(String(v ?? ""));
   const rows = txns.slice().sort(byDateThenMerchant).map((t) =>
-    `| ${[t.date, t.merchant, t.description, t.category, t.card, t.type, t.amount.toFixed(2), t.note, t.location, t.desc].map(c).join(" | ")} |`);
+    `| ${[t.date, t.merchant, t.description, t.category, t.card, t.type, t.amount.toFixed(2), t.ref ?? "", t.location, t.desc].map(c).join(" | ")} |`);
   return [MONTH_HEADER, MONTH_SEP, ...rows].join("\n");
 };
 
@@ -126,7 +129,7 @@ export const planArchive = (a: {
     const moved = byMonth.get(key)!;
     const note = a.notes.get(key);
     const existing = note ? (parseMonthTxns(note.text) ?? []) : [];
-    const incoming = moved.map((r) => { const { src: _src, ...t } = inboxToTxn(r); return { ...t, note: r.ref }; });
+    const incoming = moved.map((r) => { const { src: _src, ...t } = inboxToTxn(r); return t; });
     const { kept, dropped } = dedupeTxns([...existing, ...incoming]);
     const before = kept.map((t) => t.merchant);
     applyCanonicalMerchants(kept);
@@ -151,6 +154,16 @@ export const planArchive = (a: {
   }
 
   const blocked: string[] = [];
+  // A note with one marker, or the two in the wrong order, cannot be merged
+  // safely: replacing "between" them could delete the user's own text.
+  for (const key of byMonth.keys()) {
+    const n = a.notes.get(key);
+    if (!n) continue;
+    const s = n.text.indexOf(TXN_START), e = n.text.indexOf(TXN_END);
+    if ((s < 0) !== (e < 0) || (s >= 0 && e < s)) {
+      blocked.push(`${n.path} has a broken money section: it needs both ${TXN_START} and ${TXN_END}, in that order. Fix the note, then archive again.`);
+    }
+  }
   if (!months.length) blocked.push("Nothing to archive. Every row in the inbox is from the current month or later.");
   if (blank.length) {
     const n = blank.length;

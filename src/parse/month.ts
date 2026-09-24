@@ -22,17 +22,22 @@ export const parseMonthTxns = (text: string): Txn[] | null => {
     if (!col) col = legacyColumns(LEGACY);
     const get = getter(col, c);
     const hasRaw = col.raw != null;
+    // A legacy Notes column is free text, not a reference. Where the table has
+    // no Ref column, it is kept with the description instead.
+    const notes = col.ref == null ? get("notes") : "";
+    const description = [hasRaw ? get("description") : "", notes].filter(Boolean).join("; ");
     out.push({
       date: get("date"),
       // An older note has no Raw column, so its Description IS the raw text.
       desc: get("raw") || (hasRaw ? "" : get("description")),
-      description: hasRaw ? get("description") : "",
+      description,
       merchant: get("merchant") || get("description"),
       category: get("category") || "Uncategorised",
       card: get("card") || "Unknown",
       type: get("type") || "unknown",
       amount: num(get("amount")),
       note: get("notes") || get("ref"),
+      ref: get("ref"),
       location: get("location"),
     });
   }

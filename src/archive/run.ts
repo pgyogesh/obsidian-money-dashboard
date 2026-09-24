@@ -5,7 +5,7 @@ import { parseInbox } from "../parse/inbox";
 import type { Categories } from "../parse/types";
 import { findInbox } from "../vault/load";
 import { obsidianVault } from "../vault/obsidian";
-import { newMonthNote, removeLines, replaceTable } from "./note";
+import { newMonthNote, removeInboxLines, replaceTable } from "./note";
 import { planArchive, type ArchivePlan, type MonthNoteIn } from "./plan";
 
 export interface ArchiveOptions {
@@ -94,6 +94,7 @@ export const runArchive = async (app: App, o: ArchiveOptions, cats: Categories, 
     return { ok: false, why: `Could not back up the inbox, so nothing was changed: ${(e as Error).message}` };
   }
 
+  const written: string[] = [];
   try {
     for (const m of p.plan.months) {
       let file: TFile;
@@ -111,9 +112,10 @@ export const runArchive = async (app: App, o: ArchiveOptions, cats: Categories, 
         const own = fm.money && typeof fm.money === "object" && !Array.isArray(fm.money) ? fm.money : {};
         fm.money = { ...own, ...m.money };
       });
+      written.push(m.label);
     }
     const lines = new Set(p.plan.months.flatMap((m) => m.moved.map((r) => r.srcLine)));
-    const after = await app.vault.process(inbox, (text) => removeLines(text, lines));
+    const after = await app.vault.process(inbox, (text) => removeInboxLines(text, lines));
     return {
       ok: true, backup,
       months: p.plan.months.map((m) => m.label),
@@ -121,6 +123,9 @@ export const runArchive = async (app: App, o: ArchiveOptions, cats: Categories, 
       left: parseInbox(after).length,
     };
   } catch (e) {
-    return { ok: false, backup, why: `Archiving stopped: ${(e as Error).message}. The inbox still holds every row. A backup is at ${backup}.` };
+    const done = written.length
+      ? ` ${written.join(", ")} ${written.length === 1 ? "was" : "were"} already written to ${written.length === 1 ? "its month note" : "their month notes"}. Archiving again merges without duplicating.`
+      : " No month note was changed.";
+    return { ok: false, backup, why: `Archiving stopped: ${(e as Error).message}.${done} The inbox still holds every row. A backup is at ${backup}.` };
   }
 };

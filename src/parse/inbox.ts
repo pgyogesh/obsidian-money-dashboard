@@ -74,6 +74,7 @@ export const inboxToTxn = (r: InboxRow): Txn => ({
   type: r.method || "unknown",
   amount: r.direction === "credit" ? -Math.abs(r.amount) : Math.abs(r.amount),
   note: r.ref ?? "",
+  ref: r.ref ?? "",
   location: r.location ?? "",
   src: r,
 });

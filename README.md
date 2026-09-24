@@ -75,7 +75,7 @@ Run **Money Dashboard: Add expense**, or press **＋** in the Money Dashboard he
 
 - The row goes at the end of the inbox, in the column order of the inbox's own header.
 - **When** starts at now. **Account** and **Method** start at what you used last.
-- Leave **Ref** empty and the plugin fills in `MANUAL-YYYYMMDDHHmmss`, so two real purchases that look alike are never merged as duplicates.
+- Leave **Ref** empty and the plugin fills in `MANUAL-YYYYMMDDHHmmssSSS`, so two real purchases that look alike are never merged as duplicates.
 - If the date falls in a month that is already archived, the form warns you: the row counts after you archive again.
 
 ## Archiving completed months

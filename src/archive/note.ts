@@ -1,4 +1,4 @@
-import { TXN_END, TXN_START } from "../parse/markers";
+import { INBOX_MARK, TXN_END, TXN_START } from "../parse/markers";
 
 const section = (table: string) => `${TXN_START}\n\n${table}\n\n${TXN_END}`;
 
@@ -18,6 +18,14 @@ export const replaceTable = (noteText: string, table: string): string => {
 export const newMonthNote = (label: string, table: string): string =>
   `# ${label}\n\nArchived from the inbox by Money Dashboard. Positive is money out, negative is money in.\n\n${section(table)}\n`;
 
-/** Remove every line whose trimmed text is in `lines`. */
-export const removeLines = (text: string, lines: Set<string>): string =>
-  text.split("\n").filter((l) => !lines.has(l.trim())).join("\n");
+/**
+ * Remove every line below the inbox marker whose trimmed text is in `lines`.
+ * Nothing above the marker is touched, even a line that reads the same.
+ */
+export const removeInboxLines = (text: string, lines: Set<string>): string => {
+  const at = text.indexOf(INBOX_MARK);
+  if (at < 0) return text;
+  const cut = at + INBOX_MARK.length;
+  const below = text.slice(cut).split("\n").filter((l) => !lines.has(l.trim())).join("\n");
+  return text.slice(0, cut) + below;
+};

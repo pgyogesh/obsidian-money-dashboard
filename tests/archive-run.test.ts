@@ -108,6 +108,18 @@ describe("runArchive", () => {
     expect(after.drift).toBeNull();
   });
 
+  it("names the months already written when a later month fails", async () => {
+    const JUL = "| 2026-07-03 | 9.00 | debit | Kiosk | Other | Card A | upi | j1 | | | sms |";
+    const f = fakeApp({ [INBOX]: inbox([JUL, AUG1]) });
+    const create = f.app.vault.create;
+    f.app.vault.create = async (p: string, d: string) => { if (p.includes("August")) throw new Error("disk full"); return create(p, d); };
+    const res = await run(f.app);
+    expect(res.ok).toBe(false);
+    expect(res.ok ? "" : res.why).toMatch(/July 2026 was already written/);
+    expect(res.ok ? "" : res.why).toMatch(/disk full/);
+    expect(parseInbox(f.store[INBOX])).toHaveLength(2);
+  });
+
   it("says so when there is no inbox", async () => {
     const f = fakeApp({ "a.md": "x" });
     expect(await run(f.app)).toMatchObject({ ok: false, why: expect.stringMatching(/No inbox/) });

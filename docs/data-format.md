@@ -41,14 +41,14 @@ An earlier month lives in a note named in the Periodic Notes monthly format, `YY
 ```markdown
 %% money:txns:start %%
 
-| Date | Merchant | Description | Category | Card | Type | Amount | Notes | Location | Raw |
+| Date | Merchant | Description | Category | Card | Type | Amount | Ref | Location | Raw |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
 | 2026-07-02 10:00 | City Cafe | lunch | Dining & Delivery | Travel Card | credit_card | 420.00 | 519123456789 | | |
 
 %% money:txns:end %%
 ```
 
-The **Archive completed months** command writes exactly this layout, with the `Ref` column holding the bank reference. A table with a `Notes` column instead of `Ref` is read the same way.
+The **Archive completed months** command writes exactly this layout, with the `Ref` column holding the bank reference. An older table may have a `Notes` column and no `Ref`. `Notes` is free text: it is shown with the description, and it is never used to find duplicates.
 
 In a month note, `Amount` is signed: **positive is money out, negative is money in**. `Card` is the account and `Type` is the method.
 

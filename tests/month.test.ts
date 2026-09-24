@@ -12,13 +12,13 @@ describe("parseMonthTxns", () => {
       TXN_START,
       "| Date | Merchant | Description | Category | Card | Type | Amount | Notes | Location | Raw |",
       "| - | - | - | - | - | - | - | - | - | - |",
-      "| 2026-07-02 10:00 | Cafe | coffee with team | Dining & Delivery | Card A | upi | 120.50 | ref1 | | SMS text |",
+      "| 2026-07-02 10:00 | Cafe | coffee with team | Dining & Delivery | Card A | upi | 120.50 | paid for two | | SMS text |",
       "| 2026-07-03 | Shop | | | | | -20 | | | refund |",
       TXN_END,
     ].join("\n");
     const r = parseMonthTxns(text)!;
     expect(r).toHaveLength(2);
-    expect(r[0]).toMatchObject({ merchant: "Cafe", description: "coffee with team", desc: "SMS text", amount: 120.5, note: "ref1" });
+    expect(r[0]).toMatchObject({ merchant: "Cafe", description: "coffee with team; paid for two", desc: "SMS text", amount: 120.5, ref: "" });
     expect(r[1]).toMatchObject({ category: "Uncategorised", card: "Unknown", type: "unknown", amount: -20 });
   });
   it("treats Description as the raw text in an older note without Raw", () => {
