@@ -134,3 +134,7 @@ export const writeCell = async (app: App, path: string, row: InboxRow, cellIndex
   });
   return result;
 };
+
+/** True while the user is typing or choosing in one of this block's fields. */
+export const isEditing = (block: HTMLElement, active: Element | null): boolean =>
+  !!active && block.contains(active) && /^(INPUT|SELECT|TEXTAREA)$/.test(active.tagName);

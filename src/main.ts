@@ -2,7 +2,7 @@ import { MarkdownRenderChild, moment, normalizePath, Notice, Plugin, TAbstractFi
 import { makeFormat } from "./parse/format";
 import { MONTH_FMT } from "./parse/markers";
 import { renderAccounts } from "./render/accounts";
-import type { RenderCtx } from "./render/common";
+import { isEditing, type RenderCtx } from "./render/common";
 import { renderDashboard } from "./render/dashboard";
 import { renderMap } from "./render/map";
 import { DEFAULT_SETTINGS, MoneySettingTab, type MoneySettings } from "./settings";
@@ -29,12 +29,14 @@ class MoneyBlock extends MarkdownRenderChild {
   private timer: number | null = null;
   private drawing = false;
   private watched = new Set<string>();
+  private loaded = false;
 
   constructor(el: HTMLElement, private plugin: MoneyDashboardPlugin, private page: string, private renderer: Renderer) {
     super(el);
   }
 
   onload(): void {
+    this.loaded = true;
     this.containerEl.addClasses(["money-dashboard", this.page, "md-block"]);
     void this.draw();
     const onChange = (f: TAbstractFile) => { if (this.relevant(f)) this.schedule(); };
@@ -47,6 +49,7 @@ class MoneyBlock extends MarkdownRenderChild {
   }
 
   onunload(): void {
+    this.loaded = false;
     if (this.timer != null) window.clearTimeout(this.timer);
     this.runCleanups();
     this.plugin.blocks.delete(this);
@@ -67,11 +70,7 @@ class MoneyBlock extends MarkdownRenderChild {
     if (this.timer != null) window.clearTimeout(this.timer);
     this.timer = window.setTimeout(() => {
       this.timer = null;
-      const active = document.activeElement;
-      if (active && this.containerEl.contains(active) && /^(INPUT|SELECT|TEXTAREA)$/.test(active.tagName)) {
-        this.schedule();
-        return;
-      }
+      if (isEditing(this.containerEl, document.activeElement)) { this.schedule(); return; }
       void this.draw();
     }, 1200);
   }
@@ -82,8 +81,21 @@ class MoneyBlock extends MarkdownRenderChild {
     }
   }
 
+  /**
+   * Redraw after this page's own write. It waits while another field has
+   * focus (you tabbed from one box to the next), so typed text is not lost.
+   */
+  private refresh(): Promise<void> {
+    if (isEditing(this.containerEl, document.activeElement)) { this.schedule(); return Promise.resolve(); }
+    return this.draw();
+  }
+
   async draw(): Promise<void> {
+    if (!this.loaded) return;
     if (this.drawing) { this.schedule(); return; }
+    // This draw reads the vault afresh, so a redraw already queued by the
+    // same change is not needed.
+    if (this.timer != null) { window.clearTimeout(this.timer); this.timer = null; }
     this.drawing = true;
     try {
       this.runCleanups();
@@ -95,7 +107,7 @@ class MoneyBlock extends MarkdownRenderChild {
         fmt: makeFormat({ currency: s.currency, style: s.numberStyle }),
         cats: { income: s.incomeCategory, transfer: s.transferCategory, investments: s.investmentsCategory },
         state: this.state,
-        refresh: () => this.draw(),
+        refresh: () => this.refresh(),
         onCleanup: (cb) => { this.cleanups.push(cb); },
         watch: (path) => { if (path) this.watched.add(path); },
       };
@@ -103,6 +115,8 @@ class MoneyBlock extends MarkdownRenderChild {
       // empty while the vault is read.
       const next = createDiv();
       await this.renderer(ctx, next);
+      // The note may have closed while the vault was read.
+      if (!this.loaded) { this.runCleanups(); return; }
       this.containerEl.empty();
       this.containerEl.appendChild(next);
     } catch (e) {
