@@ -48,6 +48,8 @@ An earlier month lives in a note named in the Periodic Notes monthly format, `YY
 %% money:txns:end %%
 ```
 
+The **Archive completed months** command writes exactly this layout, with the `Ref` column holding the bank reference. A table with a `Notes` column instead of `Ref` is read the same way.
+
 In a month note, `Amount` is signed: **positive is money out, negative is money in**. `Card` is the account and `Type` is the method.
 
 ### Frontmatter

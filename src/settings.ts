@@ -14,6 +14,10 @@ export interface MoneySettings {
   mapTiles: boolean;
   tileUrl: string;
   setupFolder: string;
+  monthFolder: string;
+  monthByYear: boolean;
+  lastAccount: string;
+  lastMethod: string;
   dataviewNoticeShown: boolean;
 }
 
@@ -35,6 +39,10 @@ export const DEFAULT_SETTINGS: MoneySettings = {
   mapTiles: true,
   tileUrl: "https://tile.openstreetmap.org/{z}/{x}/{y}.png",
   setupFolder: "Money",
+  monthFolder: "Money/Months",
+  monthByYear: true,
+  lastAccount: "",
+  lastMethod: "",
   dataviewNoticeShown: false,
 };
 
@@ -109,6 +117,16 @@ export class MoneySettingTab extends PluginSettingTab {
       .setName("Folder for new notes")
       .setDesc("Where the setup command creates the inbox, the config and the pages.")
       .addText((t) => t.setValue(s.setupFolder).onChange(async (v) => { s.setupFolder = v.trim(); await save(); }));
+
+    new Setting(containerEl).setName("Archiving").setHeading();
+    new Setting(containerEl)
+      .setName("Month notes folder")
+      .setDesc("Where archiving creates a month note when the vault has none for that month. An existing note named like \"2026 - 08-August\" is used wherever it is.")
+      .addText((t) => t.setValue(s.monthFolder).onChange(async (v) => { s.monthFolder = v.trim(); await save(); }));
+    new Setting(containerEl)
+      .setName("One subfolder per year")
+      .setDesc("Create month notes as <folder>/2026/2026 - 08-August.md.")
+      .addToggle((t) => t.setValue(s.monthByYear).onChange(async (v) => { s.monthByYear = v; await save(); }));
 
     new Setting(containerEl).setName("Map").setHeading();
     new Setting(containerEl)

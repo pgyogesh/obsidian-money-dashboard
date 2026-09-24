@@ -6,6 +6,8 @@ import { isEditing, type RenderCtx } from "./render/common";
 import { renderDashboard } from "./render/dashboard";
 import { renderMap } from "./render/map";
 import { DEFAULT_SETTINGS, MoneySettingTab, type MoneySettings } from "./settings";
+import { ArchiveModal } from "./archive/modal";
+import { EntryModal } from "./entry/modal";
 import { planSetup } from "./setup";
 import { findAccounts, findInbox } from "./vault/load";
 import { obsidianVault } from "./vault/obsidian";
@@ -110,6 +112,8 @@ class MoneyBlock extends MarkdownRenderChild {
         refresh: () => this.refresh(),
         onCleanup: (cb) => { this.cleanups.push(cb); },
         watch: (path) => { if (path) this.watched.add(path); },
+        openArchive: () => this.plugin.openArchive(),
+        openEntry: () => this.plugin.openEntry(),
       };
       // Draw into a detached element, then swap, so the page does not flash
       // empty while the vault is read.
@@ -154,7 +158,38 @@ export default class MoneyDashboardPlugin extends Plugin {
       callback: () => this.setUp(true),
     });
 
+    this.addCommand({
+      id: "archive-completed-months",
+      name: "Archive completed months",
+      callback: () => this.openArchive(),
+    });
+    this.addCommand({
+      id: "add-expense",
+      name: "Add expense",
+      callback: () => this.openEntry(),
+    });
+
     this.app.workspace.onLayoutReady(() => this.checkDataview());
+  }
+
+  private cats() {
+    const s = this.settings;
+    return { income: s.incomeCategory, transfer: s.transferCategory, investments: s.investmentsCategory };
+  }
+
+  openArchive(): void {
+    const s = this.settings;
+    new ArchiveModal(this.app, { monthFolder: s.monthFolder, byYear: s.monthByYear }, this.cats(),
+      makeFormat({ currency: s.currency, style: s.numberStyle })).open();
+  }
+
+  openEntry(): void {
+    new EntryModal(this.app, this.settings, async (f) => {
+      // Remembered, so the next entry starts with the same account and method.
+      this.settings.lastAccount = f.account;
+      this.settings.lastMethod = f.method;
+      await this.saveData(this.settings);
+    }).open();
   }
 
   /** The README lists Dataview as required. Say so once if it is off. */

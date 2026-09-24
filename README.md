@@ -69,15 +69,33 @@ Settings in the Shortcut that matter:
 | The `If` condition | `Response` **is** `Yes` | A bare `If Response` also passes a `No` |
 | Format Date | `yyyy-MM-dd HH:mm` | This is the `When` value |
 
-## Archiving a month
+## Adding an expense by hand
 
-This version does not archive for you. When a month ends:
+Run **Money Dashboard: Add expense**, or press **＋** in the Money Dashboard header. Fill in the form and press **Add** (or Cmd/Ctrl+Enter).
 
-1. Create a note named for the month, such as `2026 - 08-August`.
-2. Move that month's rows from the inbox into it, between `%% money:txns:start %%` and `%% money:txns:end %%`, using the month table columns in [docs/data-format.md](docs/data-format.md).
-3. Delete the moved rows from the inbox.
+- The row goes at the end of the inbox, in the column order of the inbox's own header.
+- **When** starts at now. **Account** and **Method** start at what you used last.
+- Leave **Ref** empty and the plugin fills in `MANUAL-YYYYMMDDHHmmss`, so two real purchases that look alike are never merged as duplicates.
+- If the date falls in a month that is already archived, the form warns you: the row counts after you archive again.
 
-Until you do, the dashboard shows the month from the inbox and marks it **unarchived**.
+## Archiving completed months
+
+The inbox holds the current month. When a month ends, move it into its own note:
+
+1. Run **Money Dashboard: Archive completed months**, or press **Archive…** on the dashboard's "has ended but is still in the inbox" banner.
+2. Read the preview. For each month it shows the note it will write, the rows it moves, the duplicates it drops, and the totals.
+3. Press **Archive**.
+
+What archiving does, in this order:
+
+1. Backs up the inbox to `.archive-backups/` next to it. Obsidian does not index that folder.
+2. Reads the inbox again, so a row added while the preview was open is included.
+3. For each completed month, merges the rows into its month note. A note named like `2026 - 08-August` is used wherever it is. If there is none, one is created in the **Month notes folder** from the settings. Duplicates are dropped (by `Ref`, or by date, amount and merchant), merchant spellings are unified, and the `money:` frontmatter totals are written.
+4. Only then removes the archived rows from the inbox.
+
+Only the table between the `txns` markers and the `money:` frontmatter change. Anything else you wrote in a month note, and its other frontmatter, is kept. A monthly note with no money section yet gets one appended.
+
+Archiving refuses, and changes nothing, while a row in a completed month has no category. The preview lists those rows. Rows from the current month, and rows dated in the future, stay in the inbox.
 
 ## Network use
 
@@ -98,6 +116,8 @@ The plugin makes no other network requests and collects no telemetry.
 | Load map tiles | On |
 | Tile URL | `https://tile.openstreetmap.org/{z}/{x}/{y}.png` |
 | Folder for new notes | `Money` |
+| Month notes folder | `Money/Months` |
+| One subfolder per year | On |
 
 ## Development
 

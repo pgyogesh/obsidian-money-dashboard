@@ -36,6 +36,12 @@ export const renderDashboard = async (ctx: RenderCtx, el: HTMLElement): Promise<
 
   const inboxPath = inbox?.path ?? null;
   const warn = (text: string) => root.createDiv({ cls: "wd-money-warn", text });
+  const warnWithArchive = (text: string) => {
+    const w = warn(text);
+    const b = w.createEl("button", { cls: "wd-money-warn-action", text: "Archive…" });
+    b.onclick = () => ctx.openArchive();
+    return w;
+  };
   const saved = ctx.state.selKey as string | undefined;
   let sel: MonthData = (saved && byKey.get(saved)) || months[months.length - 1];
 
@@ -65,6 +71,8 @@ export const renderDashboard = async (ctx: RenderCtx, el: HTMLElement): Promise<
     const fwd = nav.createEl("button", { cls: "wd-money-step", text: "›", attr: { "aria-label": "Next month" } });
     fwd.disabled = i >= months.length - 1;
     fwd.onclick = () => choose(months[i + 1]);
+    const add = nav.createEl("button", { cls: "wd-money-step", text: "＋", attr: { "aria-label": "Add an expense" } });
+    add.onclick = () => ctx.openEntry();
     if (sel.file) {
       const file = sel.file;
       const open = nav.createEl("button", { cls: "wd-money-step", text: "↗", attr: { "aria-label": "Open the note" } });
@@ -81,16 +89,16 @@ export const renderDashboard = async (ctx: RenderCtx, el: HTMLElement): Promise<
     }
     const clash = overlaps.find((o) => o.key === sel.key);
     if (clash) {
-      warn(clash.winner === "inbox"
+      (clash.winner === "inbox" ? warn : warnWithArchive)(clash.winner === "inbox"
         ? `${clash.label} is in both the inbox and an archived note. It is the current month, so the inbox is shown and the archived note is ignored.`
-        : `${clash.label} is archived, but rows for it are still in the inbox. The archive is shown. Remove the leftover rows from the inbox.`);
+        : `${clash.label} is archived, but rows for it are still in the inbox. The archive is shown. Archive again to merge them in.`);
     }
     const dup = duplicates.find((d) => d.key === sel.key);
     if (dup) {
       warn(`${sel.label} has ${dup.paths.length} month notes: ${dup.paths.join(", ")}. Only ${dup.used} is counted. Merge or delete the others.`);
     }
     if (sel.status === "unarchived") {
-      warn(`${sel.label} has ended but is still in the inbox. Move its rows into a note named "${sel.moment.format(MONTH_FMT)}".`);
+      warnWithArchive(`${sel.label} has ended but is still in the inbox. Archive it to move its rows into its month note.`);
     }
     if (sel.tableless) {
       warn(`${sel.label} has frontmatter totals but no ${TXN_START} table, so merchants and the transaction list are not available for this month.`);

@@ -18,7 +18,10 @@ const fakeApp = (files: Record<string, string>) => {
   return f;
 };
 
+const calls: string[] = [];
 const ctxFor = (app: unknown, redraw: () => Promise<void> = async () => {}): RenderCtx => ({
+  openArchive: () => { calls.push("archive"); },
+  openEntry: () => { calls.push("entry"); },
   app: app as never,
   settings: DEFAULT_SETTINGS,
   fmt: makeFormat({ currency: "₹", style: "indian" }),
@@ -71,6 +74,32 @@ describe("renderDashboard", () => {
     const el = document.createElement("div");
     await renderDashboard(ctxFor(app), el);
     expect(el.textContent).toContain("No money data found yet");
+  });
+});
+
+describe("dashboard buttons", () => {
+  it("has an add button in the header that opens the entry form", async () => {
+    const { app } = fakeApp(sample());
+    const el = document.createElement("div");
+    await renderDashboard(ctxFor(app), el);
+    calls.length = 0;
+    (el.querySelector('button[aria-label="Add an expense"]') as HTMLButtonElement).click();
+    expect(calls).toEqual(["entry"]);
+  });
+  it("puts an Archive button on the unarchived banner", async () => {
+    const files = sample();
+    // Move the sample rows into last month, so the month has ended but is still in the inbox.
+    const last = moment().subtract(1, "month").format("YYYY-MM");
+    files["Money/Expenses.md"] = files["Money/Expenses.md"].replace(new RegExp(moment().format("YYYY-MM"), "g"), last);
+    delete files[`Money/${moment().subtract(1, "month").format("YYYY - MM-MMMM")}.md`];
+    const { app } = fakeApp(files);
+    const el = document.createElement("div");
+    await renderDashboard(ctxFor(app), el);
+    calls.length = 0;
+    const btn = el.querySelector(".wd-money-warn button.wd-money-warn-action") as HTMLButtonElement;
+    expect(btn.textContent).toBe("Archive…");
+    btn.click();
+    expect(calls).toEqual(["archive"]);
   });
 });
 

@@ -1428,3 +1428,19 @@ body .money-dashboard .wd-card.is-active { border-color: var(--card-color, var(-
 .money-map .wd-hmap-tip { left: var(--x, 0); top: var(--y, 0); }
 .money-map .wd-swatch { background: var(--swatch, var(--md-accent)); }
 .money-map .wd-hmap.is-tileless { background: var(--background-secondary); }
+
+/* --- Archive preview and add-expense form ---------------------------------- */
+.md-modal .md-modal-month {
+  margin: 10px 0;
+  padding: 10px 12px;
+  border: 1px solid var(--background-modifier-border);
+  border-radius: 6px;
+}
+.md-modal .md-modal-month-title { font-weight: 600; }
+.md-modal .md-modal-path { color: var(--text-muted); font-size: var(--font-ui-smaller); word-break: break-all; }
+.md-modal .md-modal-figures { font-variant-numeric: tabular-nums; }
+.md-modal .md-modal-note { color: var(--text-muted); font-size: var(--font-ui-small); margin: 6px 0; }
+.md-modal .md-modal-problem { color: var(--text-error); margin: 6px 0; }
+.md-modal .md-modal-problem ul { margin: 4px 0 0; }
+.md-modal .md-modal-buttons { display: flex; justify-content: flex-end; gap: 8px; margin-top: 14px; }
+body .money-dashboard .wd-money-warn .wd-money-warn-action { margin-left: 10px; }

@@ -19,6 +19,10 @@ export interface RenderCtx {
   onCleanup(cb: () => void): void;
   /** Re-render when this note changes. */
   watch(path: string | null | undefined): void;
+  /** Open the archive preview. */
+  openArchive(): void;
+  /** Open the add-expense form. */
+  openEntry(): void;
 }
 
 // --- Colours -----------------------------------------------------------------
