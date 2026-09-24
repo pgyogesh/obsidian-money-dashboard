@@ -33,4 +33,14 @@ describe("parseMonthTxns", () => {
     expect(r[0].desc).toBe("raw sms");
     expect(r[0].description).toBe("");
   });
+  it("reads the Ref column as the reference", () => {
+    const text = [
+      TXN_START,
+      "| Date | Merchant | Description | Category | Card | Type | Amount | Ref | Location | Raw |",
+      "| --- | --- | --- | --- | --- | --- | ---: | --- | --- | --- |",
+      "| 2026-07-02 10:00 | Cafe | | Other | Card A | upi | 10.00 | UTR123 | | sms |",
+      TXN_END,
+    ].join("\n");
+    expect(parseMonthTxns(text)![0].note).toBe("UTR123");
+  });
 });

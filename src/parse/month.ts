@@ -32,7 +32,7 @@ export const parseMonthTxns = (text: string): Txn[] | null => {
       card: get("card") || "Unknown",
       type: get("type") || "unknown",
       amount: num(get("amount")),
-      note: get("notes"),
+      note: get("notes") || get("ref"),
       location: get("location"),
     });
   }
