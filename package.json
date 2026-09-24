@@ -1,6 +1,6 @@
 {
   "name": "money-dashboard",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Spend, billing-cycle and map dashboards from a markdown transaction inbox.",
   "main": "main.js",
   "private": true,

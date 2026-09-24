@@ -616,12 +616,6 @@ body .money-accounts .wd-grid + .wd-money-top { margin-top: 1.6em; }
      4. 22px and 26px controls are below the 44px touch target guidance.
    ============================================================================ */
 
-/* --- Page chrome: reclaim the horizontal space -------------------------- */
-body.is-phone .money-dashboard.markdown-preview-view,
-body.is-phone .money-dashboard .markdown-preview-sizer {
-  padding-left: 10px !important;
-  padding-right: 10px !important;
-}
 body.is-phone .money-dashboard h1 { font-size: var(--h1-size); }
 
 /* --- Header: stack, so the month picker never crowds the title ---------- */
@@ -821,36 +815,10 @@ body.theme-dark {
    hit layer that owns every pointer event, then the tooltip and controls.
    ============================================================================ */
 
-/* The map is a BANNER. Nothing sits above it, it reaches the pane edges, and its
-   bottom edge dissolves into the page instead of ending on a border.
-
-   Two things are needed to reach the edges from inside a note:
-     1. drop the readable-line-width cap, or the note itself is narrower than
-        the pane and no negative margin can fix that;
-     2. pull outwards by --file-margins, which is the padding Obsidian puts
-        around note content.
-   Both are scoped to .money-map, so no other note is affected. */
-/* Both forms on purpose. Obsidian puts cssclasses ON the preview/source view
-   element, so ".money-map .markdown-preview-view" would never match it; the
-   descendant form covers the case where the class lands on an ancestor instead. */
-.money-map .markdown-preview-view,
-.markdown-preview-view.money-map,
-.money-map .markdown-preview-sizer,
-.markdown-preview-view.money-map .markdown-preview-sizer,
-.money-map .markdown-preview-sizer > div,
-.money-map .cm-sizer,
-.markdown-source-view.money-map .cm-sizer,
-.money-map .cm-contentContainer {
-  max-width: none !important;
-  padding-left: 0 !important;
-  padding-right: 0 !important;
-}
-.money-map .markdown-preview-sizer,
-.markdown-preview-view.money-map .markdown-preview-sizer,
-.money-map .cm-sizer,
-.markdown-source-view.money-map .cm-sizer { padding-top: 0 !important; }
-/* The code block wrapper can carry its own margin, which would reappear as a
-   gutter the moment the container padding is gone. */
+/* The map is a banner at the top of the note. It spans the note's width and
+   its bottom edge dissolves into the page instead of ending on a border. The
+   plugin does not change Obsidian's own note padding or line width. */
+/* The code block wrapper can carry its own margin. */
 .money-map .block-language-money-map { margin: 0; padding: 0; }
 
 /* The note's own title would be "something above the map", so it goes too. */
@@ -1306,7 +1274,8 @@ body.is-phone .money-dashboard td.is-loc { max-width: 96px; font-size: 11px; }
 
 /* The heat swatch. Small, round, and exactly the colour the map paints, which is
    what ties the two halves of the page into one thing. */
-.money-map .wd-swatch-col { width: 22px; padding-right: 0 !important; }
+.money-map .wd-money-table th.wd-swatch-col,
+.money-map .wd-money-table td.wd-swatch-col { width: 22px; padding-right: 0; }
 .money-map .wd-swatch {
   display: block;
   width: 9px;
@@ -1413,7 +1382,8 @@ body.is-phone .money-dashboard td.is-loc { max-width: 96px; font-size: 11px; }
    Values that change per element are passed as CSS custom properties rather
    than inline styles. These rules consume them.
    ============================================================================ */
-.md-block .is-hidden { display: none !important; }
+/* body + two classes outranks every display rule in this file, and it comes last. */
+body .md-block .is-hidden { display: none; }
 body .money-dashboard .wd-money-titlerow { display: flex; align-items: center; gap: 9px; }
 body .money-dashboard .wd-money-subhead { margin-top: 14px; }
 body .money-dashboard .wd-money-empty-sub { margin-top: 8px; }
