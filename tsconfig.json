@@ -9,7 +9,6 @@
     "moduleResolution": "node",
     "importHelpers": true,
     "isolatedModules": true,
-    "esModuleInterop": true,
     "skipLibCheck": true,
     "lib": ["DOM", "ES2020", "DOM.Iterable"]
   },
