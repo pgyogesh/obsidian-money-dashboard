@@ -1,8 +1,8 @@
 {
   "id": "money-dashboard",
   "name": "Money Dashboard",
-  "version": "0.1.1",
-  "minAppVersion": "1.4.0",
+  "version": "0.1.2",
+  "minAppVersion": "1.4.4",
   "description": "Spend, billing-cycle and map dashboards from a markdown transaction inbox.",
   "author": "Yogesh Jadhav",
   "authorUrl": "https://github.com/pgyogesh",

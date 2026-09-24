@@ -1,6 +1,7 @@
 import { moment } from "obsidian";
-import type { Moment } from "moment";
+import type { Moment } from "../time";
 import { parseAccounts, type Account } from "../parse/accounts";
+import { str } from "../parse/str";
 import { num } from "../parse/amount";
 import { hasInboxTable, inboxToTxn, parseInbox } from "../parse/inbox";
 import { DATE_FMTS, MONTH_FMT } from "../parse/markers";
@@ -150,9 +151,9 @@ export const loadMonths = async (v: VaultLike, cats: Categories, now: Moment): P
     noteMonths.push({
       ...s, file, moment: m,
       key: m.format("YYYY-MM"), short: m.format("MMM"), label: m.format("MMMM YYYY"),
-      status: String(money?.status ?? "final").toLowerCase(),
-      sources: Array.isArray(src) ? src.map(String) : (src ? [String(src)] : []),
-      updated: money?.updated != null ? String(money.updated) : null,
+      status: (str(money?.status) || "final").toLowerCase(),
+      sources: Array.isArray(src) ? src.map(str).filter(Boolean) : (str(src) ? [str(src)] : []),
+      updated: str(money?.updated) || null,
       drift,
     });
   }

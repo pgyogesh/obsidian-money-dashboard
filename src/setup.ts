@@ -1,4 +1,4 @@
-import type { Moment } from "moment";
+import type { Moment } from "./time";
 import { ACCT_END, ACCT_START, INBOX_MARK, MONTH_FMT, TXN_END, TXN_START } from "./parse/markers";
 
 export interface PlannedFile {

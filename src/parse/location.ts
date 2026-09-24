@@ -1,9 +1,11 @@
+import { str } from "./str";
+
 // The Location cell is usually a Maps link built from street, town and
 // county, so a missing street leaves a LEADING COMMA: "[, Pune, MH](...)".
 
 /** Label and link for a table cell. Only an http(s) link is kept. */
 export const locParts = (cell: unknown): { label: string; url: string } | null => {
-  const s = String(cell ?? "").trim();
+  const s = str(cell).trim();
   if (!s || s === "-") return null;
   const m = /^\[([^\]]*)\]\(([^)]*)\)$/.exec(s);
   const label = (m ? m[1] : s).replace(/^[,\s]+/, "").replace(/\s*,\s*/g, ", ").trim();
@@ -18,7 +20,7 @@ export interface Place { lat: number | null; lng: number | null; label: string }
  * nothing is geocoded. A bare place name keeps its label with no coordinates.
  */
 export const parseLoc = (cell: unknown): Place | null => {
-  const s = String(cell ?? "").trim();
+  const s = str(cell).trim();
   if (!s || s === "-") return null;
   const label = (/^\[([^\]]*)\]/.exec(s)?.[1] ?? s).replace(/^[,\s]+/, "").trim();
   const ll = /[?&](?:ll|sll|q)=(-?\d+\.\d+)\s*,\s*(-?\d+\.\d+)/.exec(s);

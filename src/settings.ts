@@ -101,7 +101,7 @@ export class MoneySettingTab extends PluginSettingTab {
 
     new Setting(containerEl).setName("Pages").setHeading();
     new Setting(containerEl)
-      .setName("Rows before \"Show all\"")
+      .setName("Rows before \"show all\"")
       .addText((t) => t.setValue(String(s.pageSize)).onChange(async (v) => {
         s.pageSize = positiveInt(v, DEFAULT_SETTINGS.pageSize);
         await save();

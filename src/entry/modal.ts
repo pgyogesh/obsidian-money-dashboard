@@ -85,9 +85,9 @@ export class EntryModal extends Modal {
     });
     new Setting(c).setName("Description").setDesc("What it was for, in your own words.")
       .addText((t) => t.onChange((x) => { this.f.description = x; }));
-    new Setting(c).setName("Ref").setDesc("Bank reference. Left empty, a MANUAL id is used, so it is never taken for a duplicate.")
+    new Setting(c).setName("Ref").setDesc("Bank reference. Left empty, a manual ID is used, so it is never taken for a duplicate.")
       .addText((t) => t.onChange((x) => { this.f.ref = x; }));
-    new Setting(c).setName("Location").setDesc("Optional. A Maps link, or \"lat, lng\".")
+    new Setting(c).setName("Location").setDesc("Optional. A maps link, or \"lat, lng\".")
       .addText((t) => t.onChange((x) => { this.f.location = x; }));
 
     this.messages = c.createDiv({ cls: "md-modal-messages" });

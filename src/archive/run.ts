@@ -1,5 +1,5 @@
 import { App, moment, TFile } from "obsidian";
-import type { Moment } from "moment";
+import type { Moment } from "../time";
 import { MONTH_FMT, TXN_END, TXN_START } from "../parse/markers";
 import { parseInbox } from "../parse/inbox";
 import type { Categories } from "../parse/types";
@@ -45,7 +45,8 @@ export const collectMonthNotes = async (app: App, inboxPath: string | null): Pro
 const plan = async (app: App, o: ArchiveOptions, cats: Categories, now: Moment) => {
   const found = await findInbox(obsidianVault(app));
   if (!found) return { found: null, notes: new Map<string, MonthNote>(), plan: null };
-  const file = app.vault.getAbstractFileByPath(found.file.path) as TFile;
+  const file = app.vault.getAbstractFileByPath(found.file.path);
+  if (!(file instanceof TFile)) return { found: null, notes: new Map<string, MonthNote>(), plan: null };
   const inboxText = await app.vault.read(file); // not the cache: this plan decides a write
   const notes = await collectMonthNotes(app, found.file.path);
   return {
@@ -108,8 +109,9 @@ export const runArchive = async (app: App, o: ArchiveOptions, cats: Categories, 
       }
       // Merge, so the user's own keys under money: (currency, statement
       // links, notes) survive. The plugin's figures replace their old values.
-      await app.fileManager.processFrontMatter(file, (fm) => {
-        const own = fm.money && typeof fm.money === "object" && !Array.isArray(fm.money) ? fm.money : {};
+      await app.fileManager.processFrontMatter(file, (fm: Record<string, unknown>) => {
+        const cur = fm.money;
+        const own = cur && typeof cur === "object" && !Array.isArray(cur) ? cur as Record<string, unknown> : {};
         fm.money = { ...own, ...m.money };
       });
       written.push(m.label);

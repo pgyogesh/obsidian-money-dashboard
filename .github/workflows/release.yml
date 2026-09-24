@@ -20,6 +20,7 @@ jobs:
           node-version: "20"
       - run: npm ci
       - run: npm test
+      - run: npm run lint
       - run: npm run build
       - name: Attest the release files
         uses: actions/attest-build-provenance@v2

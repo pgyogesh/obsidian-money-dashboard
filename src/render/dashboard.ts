@@ -2,6 +2,7 @@ import { moment } from "obsidian";
 import { DATE_FMTS, INBOX_MARK, MONTH_FMT, TXN_START } from "../parse/markers";
 import { categoryKind } from "../parse/summary";
 import { cellIndexFor } from "../parse/inbox";
+import { str } from "../parse/str";
 import type { InboxRow, Txn } from "../parse/types";
 import { cleanFreeText } from "../write/cell";
 import { loadMonths, type MonthData } from "../vault/load";
@@ -137,7 +138,7 @@ export const renderDashboard = async (ctx: RenderCtx, el: HTMLElement): Promise<
     const descEditor = (cell: HTMLElement, row: InboxRow) => {
       const box = cell.createEl("input", {
         cls: `wd-money-desc ${row.description ? "is-set" : "is-empty"}`,
-        attr: { type: "text", placeholder: "add a note" },
+        attr: { type: "text", placeholder: "Add a note" },
       });
       box.value = row.description ?? "";
       let saving = false;
@@ -210,10 +211,10 @@ export const renderDashboard = async (ctx: RenderCtx, el: HTMLElement): Promise<
             : await write(src, "description", value, "save the description");
           if (!ok) paint();
         };
-        box.onblur = () => finish(true);
+        box.onblur = () => { void finish(true); };
         box.onkeydown = (ev) => {
-          if (ev.key === "Enter") { ev.preventDefault(); finish(true); }
-          if (ev.key === "Escape") { ev.preventDefault(); finish(false); }
+          if (ev.key === "Enter") { ev.preventDefault(); void finish(true); }
+          if (ev.key === "Escape") { ev.preventDefault(); void finish(false); }
         };
         box.focus();
       };
@@ -410,7 +411,7 @@ export const renderDashboard = async (ctx: RenderCtx, el: HTMLElement): Promise<
         return [t.merchant, t.desc, t.description, t.category, t.card, t.type, t.note].join(" ").toLowerCase().includes(q);
       }).sort((a, b) => {
         const x = a[sortKey], y = b[sortKey];
-        const c = sortKey === "amount" ? (x as number) - (y as number) : String(x).localeCompare(String(y));
+        const c = sortKey === "amount" ? (x as number) - (y as number) : str(x).localeCompare(str(y));
         return c * sortDir;
       });
 

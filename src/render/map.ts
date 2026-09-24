@@ -46,7 +46,7 @@ interface Spot {
 }
 
 const buildLut = (): Uint8ClampedArray => {
-  const g = document.createElement("canvas");
+  const g = createEl("canvas");
   g.width = 256; g.height = 1;
   const gx = g.getContext("2d")!;
   const grad = gx.createLinearGradient(0, 0, 256, 0);
@@ -200,7 +200,7 @@ export const renderMap = async (ctx: RenderCtx, el: HTMLElement): Promise<void> 
   };
 
   // --- Heat ----------------------------------------------------------------------
-  const shadow = document.createElement("canvas");
+  const shadow = createEl("canvas");
   const sctx = shadow.getContext("2d", { willReadFrequently: true })!;
   const hctx = canvas.getContext("2d")!;
   const drawHeat = () => {
@@ -407,7 +407,7 @@ export const renderMap = async (ctx: RenderCtx, el: HTMLElement): Promise<void> 
       };
     }
     if (!list.length) {
-      tbody.createEl("tr").createEl("td", { cls: "is-empty-row", text: "Nothing in view. Zoom out, or press Fit.", attr: { colspan: "7" } });
+      tbody.createEl("tr").createEl("td", { cls: "is-empty-row", text: "Nothing in view. Zoom out, or press fit.", attr: { colspan: "7" } });
     }
 
     const fmtKey = (k: string) => moment(k, "YYYY-MM").format("MMM ’YY");
@@ -453,7 +453,7 @@ export const renderMap = async (ctx: RenderCtx, el: HTMLElement): Promise<void> 
 
   // --- Go ----------------------------------------------------------------------
   // The block has no width on the first pass, so the first fit waits a frame.
-  const raf = requestAnimationFrame(() => { if (!view) fit(); render(); });
+  const raf = window.requestAnimationFrame(() => { if (!view) fit(); render(); });
   const ro = new ResizeObserver(() => {
     if (!wrap.clientWidth) return;
     const nw = wrap.clientWidth, nh = wrap.clientHeight;
@@ -463,5 +463,5 @@ export const renderMap = async (ctx: RenderCtx, el: HTMLElement): Promise<void> 
     render();
   });
   ro.observe(wrap);
-  ctx.onCleanup(() => { cancelAnimationFrame(raf); ro.disconnect(); clearTiles(); });
+  ctx.onCleanup(() => { window.cancelAnimationFrame(raf); ro.disconnect(); clearTiles(); });
 };

@@ -1,5 +1,5 @@
 import { App, moment, TFile } from "obsidian";
-import type { Moment } from "moment";
+import type { Moment } from "../time";
 import { findInbox } from "../vault/load";
 import { obsidianVault } from "../vault/obsidian";
 import { appendRow, buildRow, inboxHeader, validateEntry, type EntryFields } from "./row";

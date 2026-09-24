@@ -13,7 +13,7 @@ Everything is read from notes in your vault. Nothing is sent anywhere, except ma
 ## Requirements
 
 - **[Dataview](https://github.com/blacksmithgu/obsidian-dataview) is required.** Install and enable it from **Settings → Community plugins** before you use Money Dashboard. Money Dashboard shows a notice once if Dataview is not enabled.
-- Obsidian 1.4.0 or later, on desktop or mobile.
+- Obsidian 1.4.4 or later, on desktop or mobile.
 
 ## Set up
 
@@ -164,6 +164,7 @@ The plugin makes no other network requests and collects no telemetry.
 ```bash
 npm install
 npm test        # vitest
+npm run lint    # the rules the Obsidian plugin review runs
 npm run build   # writes main.js
 ```
 

@@ -1,5 +1,5 @@
 import { moment } from "obsidian";
-import type { Moment } from "moment";
+import type { Moment } from "../time";
 import { num } from "../parse/amount";
 import { DATE_FMTS, INBOX_MARK } from "../parse/markers";
 import { isSeparator, splitCells } from "../parse/table";

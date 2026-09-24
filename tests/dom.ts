@@ -27,6 +27,7 @@ export const installDomHelpers = () => {
     for (const [k, v] of Object.entries(props)) this.style.setProperty(k, v);
   };
   (globalThis as any).createDiv = () => document.createElement("div");
+  (globalThis as any).createEl = (tag: string) => document.createElement(tag);
 
   // A 2D context that records nothing, so the map can draw.
   const fake2d = new Proxy({}, {

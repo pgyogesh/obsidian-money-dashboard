@@ -1,5 +1,5 @@
 import { moment } from "obsidian";
-import type { Moment } from "moment";
+import type { Moment } from "../time";
 import { inboxToTxn, parseInbox } from "../parse/inbox";
 import { INBOX_MARK, MONTH_FMT, TXN_END, TXN_START } from "../parse/markers";
 import { applyCanonicalMerchants } from "../parse/merchant";
@@ -7,6 +7,7 @@ import { parseMonthTxns } from "../parse/month";
 import { summarise } from "../parse/summary";
 import { isSeparator, splitCells } from "../parse/table";
 import type { Categories, InboxRow, Ranked, Summary, Txn } from "../parse/types";
+import { str } from "../parse/str";
 import { cleanFreeText } from "../write/cell";
 
 export interface MonthNoteIn {
@@ -73,7 +74,7 @@ const byDateThenMerchant = (a: Txn, b: Txn) =>
 
 /** The month note table, sorted by date then merchant. */
 export const buildTable = (txns: Txn[]): string => {
-  const c = (v: unknown) => cleanFreeText(String(v ?? ""));
+  const c = (v: unknown) => cleanFreeText(str(v));
   const rows = txns.slice().sort(byDateThenMerchant).map((t) =>
     `| ${[t.date, t.merchant, t.description, t.category, t.card, t.type, t.amount.toFixed(2), t.ref ?? "", t.location, t.desc].map(c).join(" | ")} |`);
   return [MONTH_HEADER, MONTH_SEP, ...rows].join("\n");

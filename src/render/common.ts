@@ -108,7 +108,7 @@ export const statCards = (parent: HTMLElement, cards: { cls: string; label: stri
 /** A link that opens a note. */
 export const noteLink = (app: App, parent: HTMLElement, text: string, path: string, cls = "wd-money-link") => {
   const a = parent.createEl("a", { cls, text, href: "#" });
-  a.onclick = (ev) => { ev.preventDefault(); app.workspace.openLinkText(path, "", false); };
+  a.onclick = (ev) => { ev.preventDefault(); void app.workspace.openLinkText(path, "", false); };
   return a;
 };
 

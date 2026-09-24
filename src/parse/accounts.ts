@@ -1,4 +1,4 @@
-import type { Moment } from "moment";
+import type { Moment } from "../time";
 import { num } from "./amount";
 import { ACCT_END, ACCT_START } from "./markers";
 import { isSeparator, splitCells } from "./table";

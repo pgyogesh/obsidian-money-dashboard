@@ -1,3 +1,5 @@
+import { str } from "./str";
+
 // Parse an amount tolerantly. The format says plain signed numbers, but a
 // hand-edited or half-cleaned cell may still carry a currency symbol, commas,
 // (1,234) or a trailing CR/DR from a statement. Bank convention: CR is money
@@ -5,7 +7,7 @@
 // poisoning a whole total.
 export const num = (v: unknown): number => {
   if (typeof v === "number") return Number.isFinite(v) ? v : 0;
-  let s = String(v ?? "").trim();
+  let s = str(v).trim();
   if (!s) return 0;
   const flip = /^\(.*\)$/.test(s) || /\bcr$/i.test(s);
   s = s.replace(/\b(cr|dr)$/i, "").replace(/[(),\s₹$€£¥]/g, "");
