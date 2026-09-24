@@ -93,7 +93,7 @@ What archiving does, in this order:
 3. For each completed month, merges the rows into its month note. A note named like `2026 - 08-August` is used wherever it is. If there is none, one is created in the **Month notes folder** from the settings. Duplicates are dropped (by `Ref`, or by date, amount and merchant), merchant spellings are unified, and the `money:` frontmatter totals are written.
 4. Only then removes the archived rows from the inbox.
 
-Only the table between the `txns` markers and the `money:` frontmatter change. Anything else you wrote in a month note, and its other frontmatter, is kept. A monthly note with no money section yet gets one appended.
+Only the table between the `txns` markers and the plugin's own keys under `money:` change. Anything else you wrote in a month note, its other frontmatter, and your own keys under `money:` (such as `currency`) are kept. A monthly note with no money section yet gets one appended.
 
 Archiving refuses, and changes nothing, while a row in a completed month has no category. The preview lists those rows. Rows from the current month, and rows dated in the future, stay in the inbox.
 

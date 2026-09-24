@@ -105,7 +105,12 @@ export const runArchive = async (app: App, o: ArchiveOptions, cats: Categories, 
         await ensureFolder(app, parentOf(m.path));
         file = await app.vault.create(m.path, newMonthNote(m.label, m.table));
       }
-      await app.fileManager.processFrontMatter(file, (fm) => { fm.money = m.money; });
+      // Merge, so the user's own keys under money: (currency, statement
+      // links, notes) survive. The plugin's figures replace their old values.
+      await app.fileManager.processFrontMatter(file, (fm) => {
+        const own = fm.money && typeof fm.money === "object" && !Array.isArray(fm.money) ? fm.money : {};
+        fm.money = { ...own, ...m.money };
+      });
     }
     const lines = new Set(p.plan.months.flatMap((m) => m.moved.map((r) => r.srcLine)));
     const after = await app.vault.process(inbox, (text) => removeLines(text, lines));

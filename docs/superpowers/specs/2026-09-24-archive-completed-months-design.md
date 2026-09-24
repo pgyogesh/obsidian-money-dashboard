@@ -78,7 +78,7 @@ The **Archive** button is disabled, and the preview says why, when:
    - Fold merchant spellings across the whole merged month with `applyCanonicalMerchants`.
    - Sort by date, then merchant.
    - Replace the text between `%% money:txns:start %%` and `%% money:txns:end %%` with the new table. If the note has no markers, append a `## Money` section holding them.
-   - Set the `money:` frontmatter block with `processFrontMatter`. Other frontmatter keys are left alone.
+   - Merge the plugin's keys into the `money:` frontmatter block with `processFrontMatter`. The user's own keys under `money:`, such as `currency`, and all other frontmatter are left alone.
 4. **Remove the archived rows from the inbox** in one `vault.process` call, by exact trimmed line text, and only when every month note was written.
 5. **Show a notice** with the months archived, the rows moved, and the rows left in the inbox.
 

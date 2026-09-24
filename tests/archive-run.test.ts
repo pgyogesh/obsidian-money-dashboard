@@ -36,6 +36,13 @@ describe("runArchive", () => {
     expect(f.store[INBOX]).toContain("# Inbox");
   });
 
+  it("keeps the user's own keys inside money:, and updates the plugin's", async () => {
+    const f = fakeApp({ [INBOX]: inbox([AUG1]), "M/2026 - 08-August.md": `# Aug\n\n${TXN_START}\n\n${TXN_END}\n` });
+    f.fm["M/2026 - 08-August.md"] = { money: { currency: "INR", statement: "aug.pdf", status: "draft", spend: 1 } };
+    await run(f.app);
+    expect(f.fm["M/2026 - 08-August.md"].money).toMatchObject({ currency: "INR", statement: "aug.pdf", status: "archived", spend: 100 });
+  });
+
   it("writes a backup of the inbox first", async () => {
     const f = fakeApp({ [INBOX]: inbox([AUG1, SEP1]) });
     const before = f.store[INBOX];
