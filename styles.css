@@ -849,7 +849,7 @@ body.theme-dark {
 .markdown-preview-view.money-map .markdown-preview-sizer,
 .money-map .cm-sizer,
 .markdown-source-view.money-map .cm-sizer { padding-top: 0 !important; }
-/* The dataviewjs wrapper can carry its own margin, which would reappear as a
+/* The code block wrapper can carry its own margin, which would reappear as a
    gutter the moment the container padding is gone. */
 .money-map .block-language-money-map { margin: 0; padding: 0; }
 

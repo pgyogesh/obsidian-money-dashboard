@@ -113,7 +113,7 @@ export class MoneySettingTab extends PluginSettingTab {
     new Setting(containerEl).setName("Map").setHeading();
     new Setting(containerEl)
       .setName("Load map tiles")
-      .setDesc("The map page downloads map tiles from the server below. Only tile numbers are sent, never your transactions. Turn this off to draw the heat on a blank background.")
+      .setDesc("The map page downloads map tiles from the server below. Your transactions are never sent, but the server sees which map areas are requested, which are the areas where you spend. Turn this off to draw the heat on a blank background.")
       .addToggle((t) => t.setValue(s.mapTiles).onChange(async (v) => { s.mapTiles = v; await save(); }));
     new Setting(containerEl)
       .setName("Tile URL")

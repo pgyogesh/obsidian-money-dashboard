@@ -81,7 +81,7 @@ Until you do, the dashboard shows the month from the inbox and marks it **unarch
 
 ## Network use
 
-The Money Map page downloads map tiles from `tile.openstreetmap.org`. Only tile numbers are sent (zoom level and tile position), never your transactions. You can turn tiles off, or point them at another tile server, in the plugin settings. Map data © OpenStreetMap contributors. Please respect the [OpenStreetMap tile usage policy](https://operations.osmfoundation.org/policies/tiles/).
+The Money Map page downloads map tiles from `tile.openstreetmap.org`. Your transactions are never sent, but each tile request names a zoom level and a map square, so the tile server can see which areas you look at, and those are the areas where you spend. You can turn tiles off, or point them at another tile server, in the plugin settings. Map data © OpenStreetMap contributors. Please respect the [OpenStreetMap tile usage policy](https://operations.osmfoundation.org/policies/tiles/).
 
 The plugin makes no other network requests and collects no telemetry.
 
