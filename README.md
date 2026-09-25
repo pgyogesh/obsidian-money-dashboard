@@ -51,7 +51,7 @@ When a month is in both the inbox and a month note, it is never counted twice. T
 
 ### Editing from the dashboard
 
-While a month is still in the inbox, you can set **Category** from a dropdown, and click **Merchant** or **Description** to edit it. The change is written straight into the inbox row. The write reads the file again first, so a row added in the meantime is never lost. Rows of archived months are read-only on the page.
+While a month is still in the inbox, you can set **Category** from a dropdown, and click **Merchant** or **Description** to edit it. The change is written straight into the inbox row. The write reads the file again first, so a row added in the meantime is never lost. To delete a row, press 🗑 at the end of it and confirm. The row is removed from the inbox and kept in `.archive-backups/Deleted rows.md` next to the inbox, so it can be pasted back under the inbox marker. Rows of archived months are read-only on the page, and have no delete button.
 
 ## Capture from SMS on iPhone
 

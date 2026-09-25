@@ -3,6 +3,7 @@ import { makeFormat } from "./parse/format";
 import { MONTH_FMT } from "./parse/markers";
 import { renderAccounts } from "./render/accounts";
 import { isEditing, type RenderCtx } from "./render/common";
+import { confirmModal } from "./render/confirm";
 import { renderDashboard } from "./render/dashboard";
 import { renderMap } from "./render/map";
 import { DEFAULT_SETTINGS, MoneySettingTab, type MoneySettings } from "./settings";
@@ -114,6 +115,7 @@ class MoneyBlock extends MarkdownRenderChild {
         watch: (path) => { if (path) this.watched.add(path); },
         openArchive: () => this.plugin.openArchive(),
         openEntry: () => this.plugin.openEntry(),
+        confirm: (text) => confirmModal(this.plugin.app, text),
       };
       // Draw into a detached element, then swap, so the page does not flash
       // empty while the vault is read.

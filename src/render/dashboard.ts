@@ -8,7 +8,7 @@ import { cleanFreeText } from "../write/cell";
 import { loadMonths, type MonthData } from "../vault/load";
 import { obsidianVault } from "../vault/obsidian";
 import {
-  bars, colorForCategory, locCell, METHOD_LABEL, noteLink, panel, plural, statCards, writeCell,
+  bars, colorForCategory, deleteRow, locCell, METHOD_LABEL, noteLink, panel, plural, statCards, writeCell,
   type RenderCtx,
 } from "./common";
 
@@ -221,6 +221,24 @@ export const renderDashboard = async (ctx: RenderCtx, el: HTMLElement): Promise<
       paint();
     };
 
+    // Delete, for rows still in the inbox. Archived rows have no button: their
+    // totals are already stored in the month note.
+    const deleteCell = (tr: HTMLTableRowElement, row: InboxRow | undefined) => {
+      const td = tr.createEl("td", { cls: "wd-money-actions" });
+      if (!row || !sel.fromInbox || !inboxPath) return td;
+      const path = inboxPath;
+      const b = td.createEl("button", { cls: "wd-money-delete clickable-icon", text: "🗑", attr: { "aria-label": "Delete this row" } });
+      b.onclick = async () => {
+        const ok = await ctx.confirm(`Delete ${row.when}, ${row.merchant || "no merchant"}, ${fmt.exact(row.amount)}? It is kept in the deleted log next to the inbox.`);
+        if (!ok) return;
+        b.disabled = true;
+        const res = await deleteRow(app, path, row);
+        if (!res.ok) { failed("delete the row", res.why); b.disabled = false; return; }
+        await ctx.refresh();
+      };
+      return td;
+    };
+
     const amountCell = (tr: HTMLTableRowElement, amount: number, credit: boolean) =>
       tr.createEl("td", { cls: `is-num${credit ? " is-credit" : ""}`, text: fmt.exact(amount) });
 
@@ -235,7 +253,7 @@ export const renderDashboard = async (ctx: RenderCtx, el: HTMLElement): Promise<
       const tb = ip.createDiv({ cls: "wd-money-tablewrap" }).createEl("table", { cls: "wd-money-table" });
       const hr = tb.createEl("thead").createEl("tr");
       const MINOR = new Set(["Account", "Method", "In / out"]);
-      for (const h of ["When", "Merchant", "Location", "Category", "Account", "Method", "In / out", "Amount"]) {
+      for (const h of ["When", "Merchant", "Location", "Category", "Account", "Method", "In / out", "Amount", ""]) {
         hr.createEl("th", { cls: `${h === "Amount" ? "is-num" : ""}${MINOR.has(h) ? " wd-col-minor" : ""}`.trim(), text: h });
       }
       const body = tb.createEl("tbody");
@@ -249,6 +267,7 @@ export const renderDashboard = async (ctx: RenderCtx, el: HTMLElement): Promise<
         tr.createEl("td", { cls: "wd-col-minor", text: r.method });
         tr.createEl("td", { cls: "wd-col-minor", text: r.direction || "?" });
         amountCell(tr, r.amount, r.direction === "credit");
+        deleteCell(tr, r);
       }
       if (n > 25) ip.createDiv({ cls: "wd-money-foot", text: `Showing the first 25 of ${n}.` });
       if (inboxPath) {
@@ -267,7 +286,7 @@ export const renderDashboard = async (ctx: RenderCtx, el: HTMLElement): Promise<
         "what was it actually for, in your own words", "is-inbox");
       const dtb = dp.createDiv({ cls: "wd-money-tablewrap" }).createEl("table", { cls: "wd-money-table" });
       const dhr = dtb.createEl("thead").createEl("tr");
-      for (const h of ["When", "Merchant", "Location", "Description", "Category", "Amount"]) {
+      for (const h of ["When", "Merchant", "Location", "Description", "Category", "Amount", ""]) {
         dhr.createEl("th", { cls: h === "Amount" ? "is-num" : "", text: h });
       }
       const dbody = dtb.createEl("tbody");
@@ -282,6 +301,7 @@ export const renderDashboard = async (ctx: RenderCtx, el: HTMLElement): Promise<
         cc.setCssProps({ "--bar-color": colorForCategory(cat) });
         cc.createSpan({ cls: "wd-money-tag", text: cat });
         amountCell(tr, r.amount, r.direction === "credit");
+        deleteCell(tr, r);
       }
       if (n > 25) dp.createDiv({ cls: "wd-money-foot", text: `Showing the first 25 of ${n}.` });
       dp.createDiv({ cls: "wd-money-foot", text: "A dash means \"nothing worth noting\", and stops the row appearing here." });
@@ -363,7 +383,7 @@ export const renderDashboard = async (ctx: RenderCtx, el: HTMLElement): Promise<
     }
 
     // --- Transactions -------------------------------------------------------
-    if (sel.txns.length) drawTransactions(sel, root, { editable, catPicker });
+    if (sel.txns.length) drawTransactions(sel, root, { editable, catPicker, deleteCell });
 
     // --- Provenance ---------------------------------------------------------
     const bits = [];
@@ -374,7 +394,11 @@ export const renderDashboard = async (ctx: RenderCtx, el: HTMLElement): Promise<
 
   const drawTransactions = (
     m: MonthData, parent: HTMLElement,
-    ed: { editable: (td: HTMLElement, t: Txn, k: "merchant" | "description") => void; catPicker: (c: HTMLElement, r: InboxRow) => void },
+    ed: {
+      editable: (td: HTMLElement, t: Txn, k: "merchant" | "description") => void;
+      catPicker: (c: HTMLElement, r: InboxRow) => void;
+      deleteCell: (tr: HTMLTableRowElement, r: InboxRow | undefined) => HTMLTableCellElement;
+    },
   ) => {
     const tp = panel(parent, "Transactions", `${m.txns.length} rows in ${m.file?.basename ?? "the inbox"}`);
     const filters = tp.createDiv({ cls: "wd-money-filters" });
@@ -428,6 +452,7 @@ export const renderDashboard = async (ctx: RenderCtx, el: HTMLElement): Promise<
           drawTable();
         };
       }
+      if (m.fromInbox) hr.createEl("th", { cls: "wd-money-actions" });
       const tbody = table.createEl("tbody");
       const visible = showAll ? rows : rows.slice(0, settings.pageSize);
       for (const t of visible) {
@@ -445,9 +470,10 @@ export const renderDashboard = async (ctx: RenderCtx, el: HTMLElement): Promise<
         tr.createEl("td", { cls: "wd-col-minor", text: t.card });
         tr.createEl("td", { cls: "wd-col-minor", text: METHOD_LABEL[t.type] ?? t.type });
         tr.createEl("td", { cls: `is-num${t.amount < 0 ? " is-credit" : ""}`, text: fmt.exact(t.amount) });
+        if (m.fromInbox) ed.deleteCell(tr, t.src);
       }
       if (!rows.length) {
-        tbody.createEl("tr").createEl("td", { text: "No transaction matches these filters.", attr: { colspan: String(COLS.length) } });
+        tbody.createEl("tr").createEl("td", { text: "No transaction matches these filters.", attr: { colspan: String(COLS.length + (m.fromInbox ? 1 : 0)) } });
       }
 
       // Spend and money in are reported apart. Netting salary against

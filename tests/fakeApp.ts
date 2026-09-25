@@ -35,6 +35,7 @@ export const fakeApp = (files: Record<string, string>) => {
         exists: async (p: string) => folders.has(p) || store[p] != null || hidden[p] != null,
         mkdir: async (p: string) => { folders.add(p); },
         write: async (p: string, d: string) => { hidden[p] = d; },
+        read: async (p: string) => { if (hidden[p] == null) throw new Error(`no file ${p}`); return hidden[p]; },
       },
     },
     fileManager: {

@@ -8,6 +8,7 @@ import { renderDashboard } from "../src/render/dashboard";
 import { renderMap } from "../src/render/map";
 import { DEFAULT_SETTINGS } from "../src/settings";
 import { planSetup } from "../src/setup";
+import { parseInbox } from "../src/parse/inbox";
 import { installDomHelpers } from "./dom";
 import { fakeApp as makeFakeApp } from "./fakeApp";
 
@@ -19,7 +20,9 @@ const fakeApp = (files: Record<string, string>) => {
 };
 
 const calls: string[] = [];
+let confirmAnswer = true;
 const ctxFor = (app: unknown, redraw: () => Promise<void> = async () => {}): RenderCtx => ({
+  confirm: async (text: string) => { calls.push(`confirm:${text}`); return confirmAnswer; },
   openArchive: () => { calls.push("archive"); },
   openEntry: () => { calls.push("entry"); },
   app: app as never,
@@ -100,6 +103,42 @@ describe("dashboard buttons", () => {
     expect(btn.textContent).toBe("Archive…");
     btn.click();
     expect(calls).toEqual(["archive"]);
+  });
+});
+
+describe("deleting a row", () => {
+  it("asks first, removes the row from the inbox, and keeps it in the deleted log", async () => {
+    const f = fakeApp(sample());
+    const el = document.createElement("div");
+    await renderDashboard(ctxFor(f.app), el);
+    calls.length = 0; confirmAnswer = true;
+    const before = parseInbox(f.store["Money/Expenses.md"]);
+    const btn = el.querySelector('table.wd-money-table button.wd-money-delete') as HTMLButtonElement;
+    await (btn.onclick as () => Promise<void>)();
+    const after = parseInbox(f.store["Money/Expenses.md"]);
+    expect(calls[0]).toMatch(/^confirm:Delete /);
+    expect(after).toHaveLength(before.length - 1);
+    const gone = before.find((r) => !after.some((a) => a.srcLine === r.srcLine))!;
+    expect(f.hidden["Money/.archive-backups/Deleted rows.md"]).toContain(gone.srcLine);
+  });
+  it("does nothing when the confirmation is declined", async () => {
+    const f = fakeApp(sample());
+    const el = document.createElement("div");
+    await renderDashboard(ctxFor(f.app), el);
+    confirmAnswer = false;
+    const text = f.store["Money/Expenses.md"];
+    await ((el.querySelector("button.wd-money-delete") as HTMLButtonElement).onclick as () => Promise<void>)();
+    expect(f.store["Money/Expenses.md"]).toBe(text);
+    expect(f.hidden["Money/.archive-backups/Deleted rows.md"]).toBeUndefined();
+    confirmAnswer = true;
+  });
+  it("offers no delete button on an archived month", async () => {
+    const f = fakeApp(sample());
+    const el = document.createElement("div");
+    const ctx = ctxFor(f.app);
+    await renderDashboard(ctx, el);
+    (el.querySelector('button[aria-label="Previous month"]') as HTMLButtonElement).click();
+    expect(el.querySelector("button.wd-money-delete")).toBeNull();
   });
 });
 

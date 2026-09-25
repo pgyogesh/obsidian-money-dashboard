@@ -1,3 +1,5 @@
+import { INBOX_MARK } from "../parse/markers";
+
 export type EditResult = { ok: true; text: string } | { ok: false; why: string };
 
 /** The line a row was parsed from, and where it was. */
@@ -17,21 +19,28 @@ export interface RowRef {
  * the row moved, an exact-text search is tried, and an ambiguous match is
  * refused rather than guessed.
  */
+/**
+ * Where `row` is in `lines` now: its remembered index if the text still
+ * matches, else the one line with exactly that text. Lines before `from`
+ * never count.
+ */
+const locate = (lines: string[], row: RowRef, from = 0): { idx: number } | { why: string } => {
+  if ((lines[row.srcIndex] ?? "").trim() === row.srcLine && row.srcIndex >= from) return { idx: row.srcIndex };
+  const hits: number[] = [];
+  lines.forEach((l, i) => { if (i >= from && l.trim() === row.srcLine) hits.push(i); });
+  if (hits.length === 1) return { idx: hits[0] };
+  return {
+    why: hits.length
+      ? "that row is no longer unique in the file, so it was not touched"
+      : "the row changed on disk, so it was not touched. Reopen the dashboard.",
+  };
+};
+
 export const replaceCell = (text: string, row: RowRef, cellIndex: number, value: string): EditResult => {
   const lines = text.split("\n");
-  let idx = row.srcIndex;
-  if ((lines[idx] ?? "").trim() !== row.srcLine) {
-    const hits: number[] = [];
-    lines.forEach((l, i) => { if (l.trim() === row.srcLine) hits.push(i); });
-    if (hits.length !== 1) {
-      return {
-        ok: false, why: hits.length
-          ? "that row is no longer unique in the file, so it was not touched"
-          : "the row changed on disk, so it was not touched. Reopen the dashboard.",
-      };
-    }
-    idx = hits[0];
-  }
+  const found = locate(lines, row);
+  if ("why" in found) return { ok: false, why: found.why };
+  const idx = found.idx;
   // Keep the column padding so the table stays aligned until Obsidian next
   // reformats it. +1 for the empty string before the leading pipe.
   let parts = lines[idx].split("|");
@@ -52,6 +61,21 @@ export const replaceCell = (text: string, row: RowRef, cellIndex: number, value:
   next += next.length < width ? " ".repeat(width - next.length) : " ";
   parts[at] = next;
   lines[idx] = parts.join("|");
+  return { ok: true, text: lines.join("\n") };
+};
+
+/**
+ * Remove one inbox row. Only a line below the inbox marker can be removed,
+ * found the same careful way an edit finds it.
+ */
+export const removeRow = (text: string, row: RowRef): EditResult => {
+  const lines = text.split("\n");
+  const mark = lines.findIndex((l) => l.includes(INBOX_MARK));
+  if (mark < 0) return { ok: false, why: "the inbox marker is missing, so nothing was deleted" };
+  if (row.srcIndex <= mark) return { ok: false, why: "that line is not in the inbox table, so nothing was deleted" };
+  const found = locate(lines, row, mark + 1);
+  if ("why" in found) return { ok: false, why: found.why.replace("touched", "deleted") };
+  lines.splice(found.idx, 1);
   return { ok: true, text: lines.join("\n") };
 };
 

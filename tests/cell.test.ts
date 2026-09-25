@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { cleanFreeText, replaceCell } from "../src/write/cell";
+import { cleanFreeText, removeRow, replaceCell } from "../src/write/cell";
+import { INBOX_MARK } from "../src/parse/markers";
 
 const text = "x\n| a | b    | c |\n| a | b    | c |";
 const row = (srcIndex: number, srcLine = "| a | b    | c |") => ({ srcLine, srcIndex });
@@ -50,5 +51,22 @@ describe("cleanFreeText", () => {
   it("replaces pipes and flattens newlines", () => {
     expect(cleanFreeText(" a|b ")).toBe("a/b");
     expect(cleanFreeText("one\ntwo")).toBe("one two");
+  });
+});
+
+describe("removeRow", () => {
+  const inbox = `| a | b |\n${INBOX_MARK}\n| When | X |\n| a | b |\n| c | d |\n`;
+  it("removes the remembered line and nothing else", () => {
+    expect(removeRow(inbox, { srcLine: "| c | d |", srcIndex: 4 })).toEqual({ ok: true, text: `| a | b |\n${INBOX_MARK}\n| When | X |\n| a | b |\n` });
+  });
+  it("never removes a line above the inbox marker, even with the same text", () => {
+    expect(removeRow(inbox, { srcLine: "| a | b |", srcIndex: 3 })).toEqual({ ok: true, text: `| a | b |\n${INBOX_MARK}\n| When | X |\n| c | d |\n` });
+    expect(removeRow(inbox, { srcLine: "| a | b |", srcIndex: 0 }).ok).toBe(false);
+  });
+  it("refuses a row that is gone or no longer unique", () => {
+    expect(removeRow(inbox, { srcLine: "| q |", srcIndex: 3 }).ok).toBe(false);
+    const twins = `${INBOX_MARK}\n| a |\n| a |`;
+    expect(removeRow(twins, { srcLine: "| a |", srcIndex: 9 }).ok).toBe(false);
+    expect(removeRow(twins, { srcLine: "| a |", srcIndex: 2 })).toEqual({ ok: true, text: `${INBOX_MARK}\n| a |` });
   });
 });

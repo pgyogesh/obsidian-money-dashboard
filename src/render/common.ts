@@ -2,7 +2,8 @@ import { App, TFile } from "obsidian";
 import type { Formatter } from "../parse/format";
 import { locParts } from "../parse/location";
 import type { Categories, InboxRow, Ranked } from "../parse/types";
-import { replaceCell, type EditResult } from "../write/cell";
+import { removeRow, replaceCell, type EditResult } from "../write/cell";
+import { moment } from "obsidian";
 import type { MoneySettings } from "../settings";
 
 /** What every page renderer gets. */
@@ -23,6 +24,8 @@ export interface RenderCtx {
   openArchive(): void;
   /** Open the add-expense form. */
   openEntry(): void;
+  /** Ask a yes/no question in an Obsidian modal. */
+  confirm(text: string): Promise<boolean>;
 }
 
 // --- Colours -----------------------------------------------------------------
@@ -142,3 +145,34 @@ export const writeCell = async (app: App, path: string, row: InboxRow, cellIndex
 /** True while the user is typing or choosing in one of this block's fields. */
 export const isEditing = (block: HTMLElement, active: Element | null): boolean =>
   !!active && block.contains(active) && /^(INPUT|SELECT|TEXTAREA)$/.test(active.tagName);
+
+/**
+ * Delete one inbox row. The row is written to a deleted log first, next to
+ * the inbox in `.archive-backups/`, which Obsidian does not index, so nothing
+ * is ever lost. Paste a line back under the inbox marker to restore it.
+ */
+export const deleteRow = async (app: App, path: string, row: InboxRow): Promise<EditResult> => {
+  const file = app.vault.getAbstractFileByPath(path);
+  if (!(file instanceof TFile)) return { ok: false, why: "the inbox file is not available" };
+  const check = removeRow(await app.vault.read(file), row);
+  if (!check.ok) return check;
+
+  const dir = path.includes("/") ? path.slice(0, path.lastIndexOf("/")) : "";
+  const logDir = dir ? `${dir}/.archive-backups` : ".archive-backups";
+  const log = `${logDir}/Deleted rows.md`;
+  try {
+    if (!(await app.vault.adapter.exists(logDir))) await app.vault.adapter.mkdir(logDir);
+    const head = "# Deleted rows\n\nRows deleted from the inbox by Money Dashboard. Paste a row back under the inbox marker to restore it.\n";
+    const old = (await app.vault.adapter.exists(log)) ? await app.vault.adapter.read(log) : head;
+    await app.vault.adapter.write(log, `${old}\n<!-- deleted ${moment().format("YYYY-MM-DD HH:mm")} from ${path} -->\n${row.srcLine}\n`);
+  } catch (e) {
+    return { ok: false, why: `could not write the deleted log, so nothing was deleted: ${(e as Error).message}` };
+  }
+
+  let result: EditResult = { ok: false, why: "nothing was deleted" };
+  await app.vault.process(file, (data) => {
+    result = removeRow(data, row);
+    return result.ok ? result.text : data;
+  });
+  return result;
+};

@@ -1414,3 +1414,10 @@ body .money-dashboard .wd-card.is-active { border-color: var(--card-color, var(-
 .md-modal .md-modal-problem ul { margin: 4px 0 0; }
 .md-modal .md-modal-buttons { display: flex; justify-content: flex-end; gap: 8px; margin-top: 14px; }
 body .money-dashboard .wd-money-warn .wd-money-warn-action { margin-left: 10px; }
+
+/* --- Delete a row ----------------------------------------------------------- */
+body .money-dashboard table.wd-money-table td.wd-money-actions,
+body .money-dashboard table.wd-money-table th.wd-money-actions { width: 28px; padding-left: 2px; padding-right: 2px; text-align: center; }
+body .money-dashboard button.wd-money-delete { opacity: 0.35; padding: 2px 4px; font-size: 12px; }
+body .money-dashboard tr:hover button.wd-money-delete,
+body .money-dashboard button.wd-money-delete:focus-visible { opacity: 1; }
