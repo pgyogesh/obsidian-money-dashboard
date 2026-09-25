@@ -29,6 +29,9 @@ describe("parseInbox", () => {
     expect(rows[0].merCol).toBe(3);
     expect(rows[0].descCol).toBeUndefined();
   });
+  it("records the header width, so a short row can be padded before a write", () => {
+    expect(rows[0].width).toBe(10);
+  });
   it("falls back to the legacy nine columns without a header", () => {
     const legacy = `${INBOX_MARK}\n| 2026-08-15 | 10 | debit | M | Groceries | A | upi | 1 | raw |`;
     const r = parseInbox(legacy);

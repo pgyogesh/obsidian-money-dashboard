@@ -32,13 +32,14 @@ export const parseInbox = (text: string): InboxRow[] => {
   const before = text.slice(0, at + INBOX_MARK.length).split("\n").length - 1;
   const body = text.slice(at + INBOX_MARK.length).split("\n");
   let col: Columns | null = null;
+  let width = LEGACY.length;
 
   for (let i = 0; i < body.length; i++) {
     const line = body[i].trim();
     if (!line.startsWith("|")) continue;
     const c = splitCells(line);
     if (isSeparator(c[0])) continue;
-    if (/^when$/i.test(c[0])) { col = headerColumns(c); continue; }
+    if (/^when$/i.test(c[0])) { col = headerColumns(c); width = c.length; continue; }
     if (c.length < 7) continue;
     if (!col) col = legacyColumns(LEGACY);
     const get = getter(col, c);
@@ -51,7 +52,7 @@ export const parseInbox = (text: string): InboxRow[] => {
       account: get("account"), method: get("method"),
       ref: get("ref"), raw: get("raw"), location: get("location"),
       description: get("description"),
-      srcLine: line, srcIndex: before + i,
+      srcLine: line, srcIndex: before + i, width,
       catCol: col.category, descCol: col.description, merCol: col.merchant,
     });
   }

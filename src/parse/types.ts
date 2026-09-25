@@ -18,6 +18,8 @@ export interface InboxRow {
   srcLine: string;
   /** Line index in the whole file, so a write can address the exact line. */
   srcIndex: number;
+  /** Columns in the header the row was read with. A row may have fewer. */
+  width?: number;
   catCol?: number;
   descCol?: number;
   merCol?: number;

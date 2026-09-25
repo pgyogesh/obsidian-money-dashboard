@@ -4,6 +4,8 @@ export type EditResult = { ok: true; text: string } | { ok: false; why: string }
 export interface RowRef {
   srcLine: string;
   srcIndex: number;
+  /** Columns in the table's header. A row with fewer cells is padded up to this. */
+  width?: number;
 }
 
 /**
@@ -32,9 +34,19 @@ export const replaceCell = (text: string, row: RowRef, cellIndex: number, value:
   }
   // Keep the column padding so the table stays aligned until Obsidian next
   // reformats it. +1 for the empty string before the leading pipe.
-  const parts = lines[idx].split("|");
+  let parts = lines[idx].split("|");
   const at = cellIndex + 1;
-  if (cellIndex < 0 || parts.length - 1 <= at) return { ok: false, why: "the row has too few columns" };
+  const cells = parts.length - 2; // the segments before the first and after the last pipe are not cells
+  if (cellIndex < 0) return { ok: false, why: "the row has too few columns" };
+  if (cellIndex >= cells) {
+    // A model often drops trailing empty cells, so a Shortcut row can be
+    // shorter than its header. Add the missing cells, never past the header.
+    if (!row.width || cellIndex >= row.width) return { ok: false, why: "the row has too few columns" };
+    const line = /\|\s*$/.test(lines[idx]) ? lines[idx] : `${lines[idx].replace(/\s+$/, "")}|`;
+    parts = line.split("|");
+    const have = parts.length - 2;
+    parts.splice(parts.length - 1, 0, ...Array<string>(cellIndex + 1 - have).fill("  "));
+  }
   const width = parts[at].length;
   let next = ` ${value}`;
   next += next.length < width ? " ".repeat(width - next.length) : " ";

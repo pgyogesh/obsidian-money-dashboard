@@ -32,6 +32,20 @@ describe("replaceCell", () => {
   });
 });
 
+describe("replaceCell on a row shorter than its header", () => {
+  it("adds the missing trailing cells, up to the header width, then writes", () => {
+    const r = replaceCell("| a | b |", { srcLine: "| a | b |", srcIndex: 0, width: 4 }, 3, "note");
+    expect(r).toEqual({ ok: true, text: "| a | b |  | note |" });
+  });
+  it("handles a row written without spaces or a closing pipe", () => {
+    const r = replaceCell("|a|b", { srcLine: "|a|b", srcIndex: 0, width: 3 }, 2, "x");
+    expect(r).toEqual({ ok: true, text: "|a|b| x |" });
+  });
+  it("still refuses a column past the header width", () => {
+    expect(replaceCell("| a | b |", { srcLine: "| a | b |", srcIndex: 0, width: 2 }, 3, "x").ok).toBe(false);
+  });
+});
+
 describe("cleanFreeText", () => {
   it("replaces pipes and flattens newlines", () => {
     expect(cleanFreeText(" a|b ")).toBe("a/b");
