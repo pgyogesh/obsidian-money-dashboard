@@ -1,11 +1,14 @@
 import { App, PluginSettingTab, Setting } from "obsidian";
 import type MoneyDashboardPlugin from "./main";
 import type { NumberStyle } from "./parse/format";
+import { parseBudget, type CategoryBudgets } from "./parse/budget";
+import { categoryKind } from "./parse/summary";
 
 export interface MoneySettings {
   currency: string;
   numberStyle: NumberStyle;
   categories: string[];
+  categoryBudgets: CategoryBudgets;
   incomeCategory: string;
   transferCategory: string;
   investmentsCategory: string;
@@ -32,6 +35,7 @@ export const DEFAULT_SETTINGS: MoneySettings = {
     "Taxes", "Other", "Income", "Transfer", "Investments",
   ],
   incomeCategory: "Income",
+  categoryBudgets: {},
   transferCategory: "Transfer",
   investmentsCategory: "Investments",
   pageSize: 40,
@@ -82,22 +86,65 @@ export class MoneySettingTab extends PluginSettingTab {
       .addTextArea((t) => {
         t.setValue(s.categories.join("\n")).onChange(async (v) => {
           s.categories = v.split("\n").map((x) => x.trim()).filter(Boolean);
+          drawBudgets();
           await save();
         });
         t.inputEl.rows = 10;
       });
-    const special: [keyof MoneySettings, string, string][] = [
+    const special: ["incomeCategory" | "transferCategory" | "investmentsCategory", string, string][] = [
       ["incomeCategory", "Income category", "Money in. Not counted as spend."],
       ["transferCategory", "Transfer category", "Money between your own accounts. Neither spend nor income."],
       ["investmentsCategory", "Investments category", "Money to yourself, such as a SIP. Not counted as spend."],
     ];
     for (const [key, name, desc] of special) {
       new Setting(containerEl).setName(name).setDesc(desc)
-        .addText((t) => t.setValue(String(s[key])).onChange(async (v) => {
-          (s[key] as string) = v.trim();
+        .addText((t) => t.setValue(s[key]).onChange(async (v) => {
+          s[key] = v.trim();
+          drawBudgets();
           await save();
         }));
     }
+
+    new Setting(containerEl).setName("Monthly spending budgets").setHeading();
+    const budgetsEl = containerEl.createDiv();
+    const drawBudgets = () => {
+      budgetsEl.empty();
+      const cats = { income: s.incomeCategory, transfer: s.transferCategory, investments: s.investmentsCategory };
+      // Keep saved categories editable even after removal from the picker.
+      const names = [...new Set([...s.categories, ...Object.keys(s.categoryBudgets)])]
+        .filter((name) => categoryKind(name, cats) === "spend");
+      if (!names.length) budgetsEl.createDiv({ text: "Add a spending category above to set a budget." });
+      for (const name of names) {
+        const desc = `Monthly limit in ${s.currency || "your currency"}. Leave blank for no budget; 0 means no spending. Use numbers without currency symbols or separators.`;
+        const setting = new Setting(budgetsEl).setName(name).setDesc(desc);
+        setting.addText((t) => {
+          const amount = s.categoryBudgets[name];
+          t.setPlaceholder("No budget")
+            .setValue(typeof amount === "number" ? String(amount) : "")
+            .onChange(async (v) => {
+              const next = parseBudget(v);
+              if (next === undefined) {
+                t.inputEl.setAttr("aria-invalid", "true");
+                setting.setDesc("Enter a non-negative number without currency symbols or separators, or leave blank. The saved budget has not changed.");
+                return;
+              }
+              t.inputEl.removeAttribute("aria-invalid");
+              setting.setDesc(desc);
+              if (next === null) {
+                const budgets = { ...s.categoryBudgets };
+                delete budgets[name];
+                s.categoryBudgets = budgets;
+              } else {
+                s.categoryBudgets = { ...s.categoryBudgets, [name]: next };
+              }
+              await save();
+            });
+          t.inputEl.setAttr("inputmode", "decimal");
+          t.inputEl.setAttr("aria-label", `${name} monthly budget`);
+        });
+      }
+    };
+    drawBudgets();
 
     new Setting(containerEl).setName("Pages").setHeading();
     new Setting(containerEl)

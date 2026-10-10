@@ -151,6 +151,7 @@ The plugin makes no other network requests and collects no telemetry.
 | Number format | Indian (1,56,729; L and Cr). International is 156,729; k, M and B |
 | Category list | 24 categories, one per line |
 | Income, Transfer and Investments categories | `Income`, `Transfer`, `Investments` |
+| Monthly spending budgets | No limits configured |
 | Rows before "Show all" | 40 |
 | Months on the trend chart | 12 |
 | Load map tiles | On |
@@ -158,6 +159,10 @@ The plugin makes no other network requests and collects no telemetry.
 | Folder for new notes | `Money` |
 | Month notes folder | `Money/Months` |
 | One subfolder per year | On |
+
+Set a recurring monthly limit for each spending category under **Settings → Money Dashboard → Monthly spending budgets**. Enter an amount in your configured currency, without currency symbols or separators. Leave it blank to remove the limit; `0` means no spending is budgeted. Income, transfers and investments are excluded.
+
+The dashboard compares each budget with the selected month's net category spending (after refunds) in a horizontal bar graph. Spending and budget bars share one amount scale; overspending is highlighted and the amount left or over budget is labelled. Refunds exceeding spending draw to the left of zero, and categories with no spending show zero. The current limits apply to every month you view; changing a limit also changes comparisons for past months. Budgets use category names, and a saved category stays in the budget settings if you remove it from the category picker, so you can still edit or clear its limit.
 
 ## Development
 

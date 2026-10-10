@@ -373,6 +373,72 @@ body .money-dashboard .wd-money-pct {
   margin-left: 5px;
 }
 
+/* --- Category spending versus budget --------------------------------------- */
+body .money-dashboard .wd-money-budgets .wd-money-panel-head { flex-wrap: wrap; }
+body .money-dashboard .wd-money-budget-guide {
+  color: var(--md-text-secondary);
+  font-size: 11px;
+  margin-bottom: 14px;
+}
+body .money-dashboard .wd-money-budget-chart { display: grid; gap: 16px; }
+body .money-dashboard .wd-money-budget-head {
+  display: flex;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 4px 12px;
+  margin-bottom: 6px;
+  font-size: 12px;
+}
+body .money-dashboard .wd-money-budget-name { color: var(--md-text-primary); font-weight: 600; }
+body .money-dashboard .wd-money-budget-status { color: var(--md-text-secondary); font-variant-numeric: tabular-nums; }
+body .money-dashboard .wd-money-budgets .is-over-budget .wd-money-budget-status {
+  color: var(--text-error);
+  font-weight: 600;
+}
+body .money-dashboard .wd-money-budget-measure {
+  display: grid;
+  grid-template-columns: 65px minmax(0, 1fr) var(--budget-value-width);
+  align-items: center;
+  gap: 10px;
+  margin-top: 5px;
+  font-size: 11px;
+}
+body .money-dashboard .wd-money-budget-label { color: var(--md-text-secondary); }
+body .money-dashboard .wd-money-budget-value { text-align: right; color: var(--md-text-primary); font-variant-numeric: tabular-nums; }
+body .money-dashboard .wd-money-budget-track {
+  position: relative;
+  height: 12px;
+  border-radius: 3px;
+  background-color: var(--md-hover);
+}
+body .money-dashboard .wd-money-budget-track::after {
+  content: "";
+  position: absolute;
+  left: var(--budget-zero);
+  top: -2px;
+  bottom: -2px;
+  width: 1px;
+  background-color: var(--md-text-tertiary);
+}
+body .money-dashboard .wd-money-budget-fill {
+  position: absolute;
+  left: var(--budget-start);
+  width: var(--budget-width);
+  height: 100%;
+  border-radius: 3px;
+  background-color: var(--bar-color);
+  box-sizing: border-box;
+}
+body .money-dashboard .is-over-budget .is-spend .wd-money-budget-fill { background-color: var(--text-error); }
+body .money-dashboard .is-limit .wd-money-budget-fill {
+  background-color: color-mix(in srgb, var(--md-text-secondary) 18%, transparent);
+  outline: 1px dashed var(--md-text-tertiary);
+  outline-offset: -1px;
+}
+@media (max-width: 620px) {
+  body .money-dashboard .wd-money-budget-measure { grid-template-columns: 56px minmax(0, 1fr) var(--budget-value-width); gap: 6px; }
+}
+
 /* --- Transaction table ------------------------------------------------------ */
 body .money-dashboard .wd-money-filters {
   display: flex;

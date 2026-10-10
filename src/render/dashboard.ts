@@ -7,6 +7,7 @@ import type { InboxRow, Txn } from "../parse/types";
 import { cleanFreeText } from "../write/cell";
 import { loadMonths, type MonthData } from "../vault/load";
 import { obsidianVault } from "../vault/obsidian";
+import { renderBudgets } from "./budgets";
 import {
   bars, colorForCategory, deleteRow, locCell, METHOD_LABEL, noteLink, panel, plural, statCards, writeCell,
   type RenderCtx,
@@ -373,6 +374,8 @@ export const renderDashboard = async (ctx: RenderCtx, el: HTMLElement): Promise<
     cardP.createDiv({ cls: "wd-money-panel-head wd-money-subhead" })
       .createSpan({ cls: "wd-money-panel-title", text: "Payment method" });
     bars(cardP, sel.byType, sel.net, fmt, { pretty: (k) => METHOD_LABEL[k] ?? k });
+
+    renderBudgets(ctx, root, sel.byCategory);
 
     // --- Top merchants ------------------------------------------------------
     if (sel.byMerchant.length) {

@@ -78,6 +78,56 @@ describe("renderDashboard", () => {
     await renderDashboard(ctxFor(app), el);
     expect(el.textContent).toContain("No money data found yet");
   });
+
+  it("shows selected-month net spending against budgets, including unused and zero limits", async () => {
+    const date = moment().format("YYYY-MM-DD");
+    const { app } = fakeApp({ "Expenses.md": `%% money:inbox:start %%
+| When | Amount | Direction | Merchant | Category | Account | Method |
+| --- | --- | --- | --- | --- | --- | --- |
+| ${date} | 120 | debit | Store | Groceries | Bank | upi |
+| ${date} | 30 | credit | Store | Groceries | Bank | upi |
+| ${date} | 20 | debit | Mall | Shopping | Bank | upi |
+| ${date} | 10 | credit | Cafe | Dining | Bank | upi |
+| ${date} | 0.1 | debit | Gym | Fitness | Bank | upi |
+| ${date} | 0.2 | debit | Gym | Fitness | Bank | upi |
+| ${date} | 500 | credit | Salary | Income | Bank | upi |` });
+    const ctx = ctxFor(app);
+    ctx.settings = { ...DEFAULT_SETTINGS, categoryBudgets: { Groceries: 100, Shopping: 0, Travel: 50, Dining: 20, Fitness: 0.3, Income: 1000, Transfer: 100, Investments: 100 } };
+    const el = document.createElement("div");
+    await renderDashboard(ctx, el);
+    const rows = [...el.querySelectorAll(".wd-money-budget-row")].map((row) => [
+      row.querySelector(".wd-money-budget-name")!.textContent,
+      row.querySelector(".is-spend .wd-money-budget-value")!.textContent,
+      row.querySelector(".is-limit .wd-money-budget-value")!.textContent,
+      row.querySelector(".wd-money-budget-status")!.textContent,
+    ]);
+    expect(rows).toEqual([
+      ["Groceries", "₹90.00", "₹100.00", "₹10.00 left"],
+      ["Shopping", "₹20.00", "₹0.00", "₹20.00 over"],
+      ["Travel", "₹0.00", "₹50.00", "₹50.00 left"],
+      ["Dining", "-₹10.00", "₹20.00", "₹30.00 left"],
+      ["Fitness", "₹0.30", "₹0.30", "₹0.00 left"],
+    ]);
+    expect(el.querySelectorAll(".wd-money-budgets .is-over-budget")).toHaveLength(1);
+  });
+
+  it("uses the selected month's spending when navigating archived months", async () => {
+    const { app } = fakeApp(sample());
+    const ctx = ctxFor(app);
+    ctx.settings = { ...DEFAULT_SETTINGS, categoryBudgets: { Groceries: 10000 } };
+    const el = document.createElement("div");
+    await renderDashboard(ctx, el);
+    const before = el.querySelector(".wd-money-budget-chart")!.textContent;
+    (el.querySelector('button[aria-label="Previous month"]') as HTMLButtonElement).click();
+    expect(el.querySelector(".wd-money-budget-chart")!.textContent).not.toBe(before);
+  });
+
+  it("omits the budget panel when no limits are configured", async () => {
+    const { app } = fakeApp(sample());
+    const el = document.createElement("div");
+    await renderDashboard(ctxFor(app), el);
+    expect(el.querySelector(".wd-money-budgets")).toBeNull();
+  });
 });
 
 describe("dashboard buttons", () => {

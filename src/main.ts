@@ -1,5 +1,6 @@
 import { MarkdownRenderChild, moment, normalizePath, Notice, Plugin, TAbstractFile, TFile } from "obsidian";
 import { makeFormat } from "./parse/format";
+import { normaliseBudgets } from "./parse/budget";
 import { MONTH_FMT } from "./parse/markers";
 import { renderAccounts } from "./render/accounts";
 import { isEditing, type RenderCtx } from "./render/common";
@@ -136,7 +137,7 @@ class MoneyBlock extends MarkdownRenderChild {
 }
 
 export default class MoneyDashboardPlugin extends Plugin {
-  settings: MoneySettings = { ...DEFAULT_SETTINGS };
+  settings: MoneySettings = { ...DEFAULT_SETTINGS, categoryBudgets: {} };
   blocks = new Set<MoneyBlock>();
 
   async onload(): Promise<void> {
@@ -229,7 +230,7 @@ export default class MoneyDashboardPlugin extends Plugin {
 
   async loadSettings(): Promise<void> {
     const saved = (await this.loadData()) as Partial<MoneySettings> | null;
-    this.settings = { ...DEFAULT_SETTINGS, ...(saved ?? {}) };
+    this.settings = { ...DEFAULT_SETTINGS, ...(saved ?? {}), categoryBudgets: normaliseBudgets(saved?.categoryBudgets) };
   }
 
   async saveSettings(): Promise<void> {
